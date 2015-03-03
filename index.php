@@ -19,7 +19,7 @@
 <div id="grafica"></div>
 
 <script type="text/javascript">
-    var cant = 500;
+    var cant = 350;
     var chart = new Grafica({id: "#grafica"});
 
     var periodos = [
@@ -32,7 +32,7 @@
             texto: "5D",
             cantidad: 5,
             tipo: "dia",
-            seleccionado: false
+            seleccionado: true
         }, {
             texto: "10D",
             cantidad: 10,
@@ -42,7 +42,7 @@
             texto: "1M",
             cantidad: 1,
             tipo: "mes",
-            seleccionado: true
+            seleccionado: false
         }, {
             texto: "3M",
             cantidad: 3,
@@ -72,14 +72,15 @@
         }
     ];
 
-    parseDate = d3.time.format("%Y-%m-%d").parse;
+    var parseDate = d3.time.format("%Y-%m-%d").parse;
+    var formatFecha = d3.time.format("%Y-%m-%d");
 
     var uno = '[{ "date": "2015-02-25","close": "4.88","volume": 1607130},' +
         '{"date": "2015-02-26","close": "2.02","volume": 2547970},' +
         '{"date": "2015-02-27","close": "0.4","volume": 1524110}]';
 
     uno = JSON.parse(uno);
-    uno = uno.map(function(d){
+    uno = uno.map(function (d) {
         return {
             date: parseDate(d.date),
             close: +d.close,
@@ -134,7 +135,7 @@
             var close = Math.random() * 5;
 
             random_data.push({
-                date: fecha,
+                date: formatFecha(fecha),
                 open: Math.round(open * 100) / 100,
                 high: (Math.round(high * 100) + 1.5 ) / 100,
                 low: Math.round(low * 100) / 100,

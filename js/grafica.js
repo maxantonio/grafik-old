@@ -684,6 +684,9 @@ if (typeof Object.create !== 'function') {
                 .enter()
                 .append("rect")
                 .attr("class", "bar")
+                .attr("data-pos", function (d, i) {
+                    return i;
+                })
                 .attr("fill", self.datos[0].color)
                 .attr("width", x2.rangeBand())
                 .attr("x", function (d) {
@@ -772,6 +775,22 @@ if (typeof Object.create !== 'function') {
                 self._m_actualizar_grafica(data);
             });
         },
+        _m_preparar_Datos: function () {
+            //En esta funcion se parsean todas las fechas
+            for (var i = 0; i < self.datos.length; i++) {
+                var data = self.datos[i].data;
+                var result = [];
+                data.forEach(function (d) {
+                    result.push({
+                        close: +d.close,
+                        date: parseDate(d.date),
+                        volume: +d.volume
+                    });
+                });
+                self.datos[i].data = result;
+            }
+            return true;
+        },
         /**Metodo principal*/
         m_graficar: function () {
             self = this;
@@ -783,6 +802,10 @@ if (typeof Object.create !== 'function') {
             self._m_btn_comparar(); //Inicializa los eventos click en el DropDown de comparar
             self._m_evento_click_periodos();
             self._m_evento_click_reset();
+            if (!self._m_preparar_Datos()) {
+                console.error("m_graficar -> Configuracion de datos incorrectos");
+                return;
+            }
 
             //Datos que se van a graficar
             var data = self._m_seleccionar_datos_a_graficar();
@@ -961,8 +984,13 @@ if (typeof Object.create !== 'function') {
             chart_fecha_fin = null;
             self._m_configurar_selector_de_fecha(self.datos[0].data[0].date, self.datos[0].data[self.datos[0].data.length - 1].date);
 
+            //Convierte un string en este formato a un objeto Date
             parseDate = d3.time.format("%Y-%m-%d").parse;
+
+            // Convierte un objeto Date al formato "ano-mes-dia" Ex: 2015-02-27
             formatFecha = d3.time.format("%Y-%m-%d");
+
+            // Convierte un objeto Date al formato "mes, dia, ano" Ex: Febrero, 03, 2015
             formatDate = d3.time.format("%b %d, %Y");
             bisectDate = d3.bisector(function (d) {
                 return d.date;
@@ -1201,7 +1229,8 @@ if (typeof Object.create !== 'function') {
             }
             rectangulo.on("mousemove", mouse_move_datos);
             //function privada para el mouse move
-            var d = null;
+            var d = null, pos = -1, temp = -1;
+            ;
 
             function mouse_move_datos() {
                 var change = 0;
@@ -1213,11 +1242,12 @@ if (typeof Object.create !== 'function') {
                 if (x0 - d0.date > d1.date - x0) {
                     d = d1;
                     change = self.comparaciones["datos"][0][i].porciento;
+                    pos = i;
                 } else {
                     change = self.comparaciones["datos"][0][i - 1].porciento;
                     d = d0;
+                    pos = i - 1;
                 }
-                //d = x0 - d0.date > d1.date - x0 ? d1 : d0;
 
                 //Actualizar Leyenda en elmouse move
                 chart_container.select("#open").text(d.open);
@@ -1227,6 +1257,15 @@ if (typeof Object.create !== 'function') {
                 chart_container.select("#volumen").text(d.volume);
                 chart_container.select("#change").text(change + "%");
 
+                var barra = focus_barra.select('rect[data-pos="' + pos + '"]');
+                var tempColor = barra.style.fill;
+                if (temp != pos) {
+                    barra = focus_barra.select('rect[data-pos="' + temp + '"]');
+                    barra.style("fill", tempColor).style('opacity', 1);
+                } else {
+                    barra.style("fill", "#FFBB78").style('opacity', .5);
+                }
+                temp = pos;
                 focus.select(".x")
                     .attr("transform", "translate(" + x(d.date) + ",0)")
                     .attr("y1", 0)
