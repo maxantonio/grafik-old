@@ -14,7 +14,7 @@ if (typeof Object.create !== 'function') {
             id: "#chart", // id del elemento contenedor de la grafica, Debe estar creado previamente en el html de la pagina
             colores: [],
             valor: 5,
-            margin: {top: 20, right: 50, bottom: 150, left: 50},
+            margin: {top: 20, right: 50, bottom: 150, left: 80},
             margin2: {top: 50, realtop: 0, bottom: 0},
             width: 850, //ancho de la grafica por defecto
             height: 500, // alto de la grafica por defecto
@@ -125,10 +125,6 @@ if (typeof Object.create !== 'function') {
                 return d.date;
             }));
 
-            y2.domain([0, d3.max(self.datos[0].data, function (d) {
-                return d.volume;
-            })]);
-
             //Borrar las lineas que estaban, actualmente, pero luego las voy a ocultar simplemente
             svg.selectAll("path.line-porciento").remove();
 
@@ -203,10 +199,18 @@ if (typeof Object.create !== 'function') {
             var fechaFin = self.comparaciones["datos"][0][total].date;
             var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
 
+            y2.domain([0, d3.max(data, function (d) {
+                return d.volume;
+            })]);
+
+            y3.domain(y2.domain());
+
+            focus_barra.select(".y.axis")
+                .call(yAxis2);
+
             //Actualizar grafica de barras
             self._m_graficar_barras(data);
             //dgfuentes
-
 
             //// Seleccionar los elementos, y los enlazo con los datos
             //var bars = focus_barra.selectAll("rect")
@@ -426,6 +430,8 @@ if (typeof Object.create !== 'function') {
                 return d.volume;
             })]);
 
+            y3.domain(y2.domain());
+
             //Esto es porque para las comparaciones le habia puesto un porciento
             yAxis.tickFormat(function (tickValue) {
                 return tickValue;
@@ -470,6 +476,7 @@ if (typeof Object.create !== 'function') {
             main_svg.select(".y.axis")
                 .call(yAxis);
 
+            //Actualiza la grafic ade barras
             self._m_graficar_barras(data);
 
             //Mouse move por DATOS
@@ -780,13 +787,26 @@ if (typeof Object.create !== 'function') {
             for (var i = 0; i < self.datos.length; i++) {
                 var data = self.datos[i].data;
                 var result = [];
-                data.forEach(function (d) {
-                    result.push({
-                        close: +d.close,
-                        date: parseDate(d.date),
-                        volume: +d.volume
+                if (i == 0) {
+                    data.forEach(function (d) {
+                        result.push({
+                            close: +d.value,
+                            date: parseDate(d.date),
+                            volume: +d.volume,
+                            open: +d.open,
+                            hight: +d.hight,
+                            low: +d.low
+                        });
                     });
-                });
+                } else {
+                    data.forEach(function (d) {
+                        result.push({
+                            close: +d.value,
+                            date: parseDate(d.date),
+                            volume: +d.volume
+                        });
+                    });
+                }
                 self.datos[i].data = result;
             }
             return true;
@@ -1128,7 +1148,7 @@ if (typeof Object.create !== 'function') {
             var contenedor_fecha =
                 '<div class="parametros">' +
                 '<form role="form" class="form-inline">' +
-                input_fecha_inicio + input_fecha_fin + btnIndicadores + btnDropdown + btnReiniciar +
+                input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar +
                 '</form>' +
                 '</div>' +
                 '<div class="clearfix"></div>';
@@ -1140,7 +1160,7 @@ if (typeof Object.create !== 'function') {
                 return '<div class="leyenda"><div class="wrapper"><p>Open:&nbsp;<span id="open"></span></p>' +
                     '<p>Hight:&nbsp;<span id="high">0</span></p><p>Low:&nbsp;<span id="low">0</span></p>' +
                     '<p>Close:&nbsp;<span id="close">0</span></p><p>Volume:&nbsp;<span id="volumen">0</span></p>' +
-                    '<p>Change: <span id="change">0</span></p><p>Prueba: <span id="test">0</span></p></div></div>';
+                    '<p>Change: <span id="change">0</span></p></div></div>';
             }
         }
         ,
@@ -1251,7 +1271,7 @@ if (typeof Object.create !== 'function') {
 
                 //Actualizar Leyenda en elmouse move
                 chart_container.select("#open").text(d.open);
-                chart_container.select("#high").text(d.close);
+                chart_container.select("#high").text(d.hight);
                 chart_container.select("#low").text(d.low);
                 chart_container.select("#close").text(d.close);
                 chart_container.select("#volumen").text(d.volume);

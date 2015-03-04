@@ -15,13 +15,16 @@
 
 </head>
 <body>
-
-<div id="grafica"></div>
+<div id="container" style="margin-left: 50px; margin-top: 30px">
+    <div id="grafica"></div>
+</div>
 
 <script type="text/javascript">
-    var cant = 350;
-    var chart = new Grafica({id: "#grafica"});
 
+
+    var parseDate = d3.time.format("%Y-%m-%d").parse;
+    var formatFecha = d3.time.format("%Y-%m-%d");
+    var chart = new Grafica({id: "#grafica"});
     var periodos = [
         {
             texto: "2D",
@@ -71,54 +74,46 @@
             seleccionado: false
         }
     ];
+    var datos;
 
-    var parseDate = d3.time.format("%Y-%m-%d").parse;
-    var formatFecha = d3.time.format("%Y-%m-%d");
+    jQuery(document).ready(function () {
 
-    var uno = '[{ "date": "2015-02-25","close": "4.88","volume": 1607130},' +
-        '{"date": "2015-02-26","close": "2.02","volume": 2547970},' +
-        '{"date": "2015-02-27","close": "0.4","volume": 1524110}]';
+        //http://marktdaten.herokuapp.com/historicos2/4.json?callback=callback
+        jQuery.ajax({
+            url: "http://marktdaten.herokuapp.com/historicos2/4.json?callback=callback",
+            type: 'GET',
+            dataType: 'jsonp',
+            jsonpCallback: 'callback',
+            success: function (result, testStatus) {
+                datos = [
+                    {
+                        titulo: "MAXCOM",
+                        data: result.precios,
+                        color: "steelblue"
+                    },
+                    {
+                        titulo: "IPC",
+                        data: result.ipc,
+                        color: "#ff7f0e"
+                    }
+                ];
 
-    uno = JSON.parse(uno);
-    uno = uno.map(function (d) {
-        return {
-            date: parseDate(d.date),
-            close: +d.close,
-            volume: d.volume
-        }
+                chart.datos = datos;
+                chart.periodos = periodos;
+                chart.m_graficar();
+            }
+            ,
+            error: function (jqXHR, textStatus, errorThrow) {
+                console.error(jqXHR['responseText']);
+            }
+        });
     });
 
-    datos = [
-        {
-            titulo: "MAXCOM",
-            data: generar_datos_aleatorios(cant),
-            color: "#FF7F0E",
-            color: "steelblue"
-        },
-        {
-            titulo: "BBVA",
-            data: generar_datos_aleatorios(cant),
-            color: "green",
-            color: "#1f77b4",
-            color: "#2ca02c",
-            color: "#ff7f0e",
-        },
-        {
-            titulo: "Yahoo",
-            data: generar_datos_aleatorios(cant),
-            color: "green"
-        },
-        {
-            titulo: "NASDAQ",
-            data: generar_datos_aleatorios(cant),
-            color: "red"
-        }
-    ];
 
     var chart = new Grafica({id: "#grafica"});
-    chart.datos = datos;
-    chart.periodos = periodos;
-    chart.m_graficar();
+    //    chart.datos = datos;
+    //    chart.periodos = periodos;
+    //    chart.m_graficar();
 
     function generar_datos_aleatorios(cantidad_elementos) {
         cantidad_elementos || (cantidad_elementos = 10);
@@ -145,6 +140,10 @@
         }
         return random_data.reverse();
     }
+
+    //http://marktdaten.herokuapp.com/historicos/3.json
+
+
 </script>
 
 </body>
