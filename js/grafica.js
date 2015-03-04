@@ -265,7 +265,7 @@ if (typeof Object.create !== 'function') {
 
             //MOUSE MOVE COMPARACIONES
             var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
-            self._m_mouse_move_comparaciones(rectangulo);
+            self._m_mouse_move_comparaciones(rectangulo,data);
         },
         /** Calcula los datos de las comparaciones para la empresa que se le pase por parametro */
         _m_calcular_porciento: function (fechaInicio, fechaFin, pos, simbolo) {
@@ -336,51 +336,44 @@ if (typeof Object.create !== 'function') {
                     span.text("+");
 
                     // Elimina la linea que se selecciono
-                    var linea = chart_container.select('path.line-porciento[data_titulo="' + simbolo + '"]');
-                    if (!linea.empty()) {
-                        //Elimino los datos para esa linea del arreglo de comparaciones
-                        pos = self.comparaciones["simbolos"].indexOf(simbolo);
-                        if (pos > -1) {
-                            self.comparaciones["simbolos"].splice(pos, 1);
-                            self.comparaciones["datos"].splice(pos, 1);
-                            self.comparaciones["colores"].splice(pos, 1);
-                        }
+                    //Elimino la linea y su circulo
+                    chart_container.select('path.line-porciento[data_titulo="' + simbolo + '"]').remove();
+                    d3.selectAll('circle[data_simbolo="' + simbolo + '"]').remove();
 
-                        //Elimino la linea y su circulo
-                        d3.selectAll('circle[data_simbolo="' + simbolo + '"]').remove();
-                        linea.remove();
+                    //Eliminarlo tambien de la leyenda
+                    chart_container.selectAll('span[data_simbolo="' + simbolo + '"]').remove();
 
-                        //Eliminarlo tambien de la leyenda
-                        chart_container.selectAll('span[data_simbolo="' + simbolo + '"]').remove();
-
-                        //Si queda 1 sola comparacion
-                        if (self.comparaciones["simbolos"].length == 1) {
-                            var simbolo_base = self.datos[0].titulo;
-
-                            // Actualizo la variable comparando a false
-                            self.comparando = false;
-
-                            // Elimino el circulo
-                            focus.select('circle[data_simbolo="' + simbolo_base + '"]').remove();
-
-                            // Eliminarle el span de la leyenda
-                            chart_container.select('span[data_simbolo="' + simbolo_base + '"]').remove();
-
-                            // Eliminar la linea de porciento
-                            chart_container.select('path[data_titulo="' + simbolo_base + '"]').remove();
-
-                            // Obtengo los datos de ese periodo y los grafico
-                            var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
-                            self._m_actualizar_grafica(data);
-                        } else {
-                            self._m_graficar_comparaciones();
-                        }
-
-
-                    } else {
-                        console.error("_m_btn_comparar -> no existe el simbolo '" + simbolo + "'");
-                        return;
+                    //Elimino los datos para esa linea del arreglo de comparaciones
+                    pos = self.comparaciones["simbolos"].indexOf(simbolo);
+                    if (pos > -1) {
+                        self.comparaciones["simbolos"].splice(pos, 1);
+                        self.comparaciones["datos"].splice(pos, 1);
+                        self.comparaciones["colores"].splice(pos, 1);
                     }
+
+                    //Si queda 1 sola comparacion
+                    if (self.comparaciones["simbolos"].length == 1) {
+                        var simbolo_base = self.datos[0].titulo;
+
+                        // Actualizo la variable comparando a false
+                        self.comparando = false;
+
+                        // Elimino el circulo
+                        focus.select('circle[data_simbolo="' + simbolo_base + '"]').remove();
+
+                        // Eliminarle el span de la leyenda
+                        chart_container.select('span[data_simbolo="' + simbolo_base + '"]').remove();
+
+                        // Eliminar la linea de porciento
+                        chart_container.select('path[data_titulo="' + simbolo_base + '"]').remove();
+
+                        // Obtengo los datos de ese periodo y los grafico
+                        var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
+                        self._m_actualizar_grafica(data);
+                    } else {
+                        self._m_graficar_comparaciones();
+                    }
+
                 }
             });
         },
@@ -761,8 +754,7 @@ if (typeof Object.create !== 'function') {
                     }
 
                     var todos_span = d3.selectAll("ul.comparar span");
-                    todos_span.text("+");
-                    todos_span.style("background", "green");
+                    todos_span.text("+").attr("data-operacion", "+").style("background", "green");
 
                     // Quitarlas del arreglo comparaciones
                     // Quitar los valores del Dropdown Comparar
@@ -1250,7 +1242,6 @@ if (typeof Object.create !== 'function') {
             rectangulo.on("mousemove", mouse_move_datos);
             //function privada para el mouse move
             var d = null, pos = -1, temp = -1;
-            ;
 
             function mouse_move_datos() {
                 var change = 0;
@@ -1286,6 +1277,7 @@ if (typeof Object.create !== 'function') {
                     barra.style("fill", "#FFBB78").style('opacity', .5);
                 }
                 temp = pos;
+
                 focus.select(".x")
                     .attr("transform", "translate(" + x(d.date) + ",0)")
                     .attr("y1", 0)
@@ -1315,20 +1307,21 @@ if (typeof Object.create !== 'function') {
         }
         ,
 
-        _m_mouse_move_comparaciones: function (rectangulo) {
+        _m_mouse_move_comparaciones: function (rectangulo,data) {
 
             rectangulo.on("mousemove", mouse_move_comparaciones);
+
+            var dd = null, pos1 = -1, temp = -1;
 
             function mouse_move_comparaciones() {
                 var leyenda = d3.select(".leyenda > .wrapper");
                 focus = main_svg.select(".focus");
                 var x0 = x.invert(d3.mouse(this)[0]);
-                var dd = null;
 
-                self.comparaciones["datos"].forEach(function (data, pos) {
-                    var ii = bisectDate(data, x0, 1);
-                    var d0 = data[ii - 1];
-                    var d1 = data[ii];
+                self.comparaciones["datos"].forEach(function (dataComp, pos) {
+                    var ii = bisectDate(dataComp, x0, 1);
+                    var d0 = dataComp[ii - 1];
+                    var d1 = dataComp[ii];
                     var d = x0 - d0.date > d1.date - x0 ? d1 : d0;
 
                     focus.select('circle[data_simbolo="' + self.comparaciones["simbolos"][pos] + '"]')
@@ -1346,10 +1339,18 @@ if (typeof Object.create !== 'function') {
                     "<br><b> Close: " + d.close + "</b>");
                 });
 
-                var ii = bisectDate(self.datos[0].data, x0, 1);
-                var d0 = self.datos[0].data[ii - 1];
-                var d1 = self.datos[0].data[ii];
-                var dt = x0 - d0.date > d1.date - x0 ? d1 : d0;
+                var ii = bisectDate(data, x0, 1);
+                var d0 = data[ii - 1];
+                var d1 = data[ii];
+                var dt = null;
+
+                if (x0 - d0.date > d1.date - x0) {
+                    dt = d1;
+                    pos1 = ii;
+                } else {
+                    dt = d0;
+                    pos1 = ii - 1;
+                }
 
                 //Actualizar Leyenda en elmouse move
                 d3.select("#open").text(dt.open);
@@ -1357,6 +1358,16 @@ if (typeof Object.create !== 'function') {
                 d3.select("#low").text(dt.low);
                 d3.select("#close").text(dt.close);
                 d3.select("#volumen").text(dt.volume);
+
+                var barra = focus_barra.select('rect[data-pos="' + pos1 + '"]');
+                var tempColor = barra.style.fill;
+                if (temp != pos1) {
+                    barra = focus_barra.select('rect[data-pos="' + temp + '"]');
+                    barra.style("fill", tempColor).style('opacity', 1);
+                } else {
+                    barra.style("fill", "#FFBB78").style('opacity', .5);
+                }
+                temp = pos1;
 
                 //Posicionando la line vertical cuando se mueve el mouse
                 focus.select(".linea-vertical")
