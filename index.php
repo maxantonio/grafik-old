@@ -20,8 +20,6 @@
 </div>
 
 <script type="text/javascript">
-
-
     var parseDate = d3.time.format("%Y-%m-%d").parse;
     var formatFecha = d3.time.format("%Y-%m-%d");
     var chart = new Grafica({id: "#grafica"});
@@ -29,6 +27,11 @@
         {
             texto: "2D",
             cantidad: 2,
+            tipo: "dia",
+            seleccionado: false
+        }, {
+            texto: "4D",
+            cantidad: 4,
             tipo: "dia",
             seleccionado: false
         }, {
@@ -40,12 +43,12 @@
             texto: "10D",
             cantidad: 10,
             tipo: "dia",
-            seleccionado: false
+            seleccionado: true
         }, {
             texto: "1M",
             cantidad: 1,
             tipo: "mes",
-            seleccionado: true
+            seleccionado: false
         }, {
             texto: "3M",
             cantidad: 3,
@@ -85,6 +88,16 @@
             dataType: 'jsonp',
             jsonpCallback: 'callback',
             success: function (result, testStatus) {
+
+               /* var uno = '[{"date":"2013-01-02","open":"3.88","low":"3.79","hight":"3.9","value":"3.84","volume":515500},' +
+                '{"date":"2013-01-03","open":"3.8","low":"3.79","hight":"3.89","value":"3.83","volume":749400},' +
+                '{"date":"2013-01-04","open":"3.81","low":"3.79","hight":"3.85","value":"3.83","volume":286400},' +
+                '{"date":"2013-01-07","open":"3.83","low":"3.78","hight":"3.85","value":"3.81","volume":233000},' +
+                '{"date":"2013-01-08","open":"3.81","low":"3.73","hight":"3.82","value":"3.8","volume":485200},' +
+                '{"date":"2013-01-09","open":"3.81","low":"3.79","hight":"3.98","value":"3.93","volume":848100}]';
+
+                uno = JSON.parse(uno);*/
+
                 datos = [
                     {
                         titulo: "MAXCOM",

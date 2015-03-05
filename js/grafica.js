@@ -443,9 +443,6 @@ if (typeof Object.create !== 'function') {
 
             y.domain([min - add, max + add]);
 
-            //y.domain([0, d3.max(data, function (d) {
-            //    return d.close;
-            //}) + 1]);
 
             //Dominio para la grafica de barra
             x2.domain(data.map(function (d) {
@@ -458,8 +455,12 @@ if (typeof Object.create !== 'function') {
 
             y2_1.domain(y2.domain());
 
+            // Actualizando rango del brush
+            brush.extent(x.domain());
+
             //Esto es porque para las comparaciones le habia puesto un porciento
             yAxis.tickFormat(function (tickValue) {
+                
                 return tickValue;
             });
 
@@ -470,6 +471,9 @@ if (typeof Object.create !== 'function') {
             /*Este elemento anterior lo seleccione a partir del chart container para que se pudiera animar,
              * si lo senalo con el main_svg se cancela el transition y da error.
              * */
+
+
+            chart_container.select(".line-main").datum(data);
 
             main_svg = d3.select("#chart-container>svg")
                 .transition()
@@ -492,7 +496,8 @@ if (typeof Object.create !== 'function') {
 
             //Actualizo los valores de la linea
             main_svg.select(".line-main")
-                .attr("d", valueline(data));
+                //.datum(data)
+                .attr("d", valueline);
 
             //Actualizo el eje X
             main_svg.select(".x.axis")
@@ -501,6 +506,12 @@ if (typeof Object.create !== 'function') {
             //Actualizo el eje Y
             main_svg.select(".y.axis")
                 .call(yAxis);
+
+            //Actualizo el brush
+            //main_svg.select(".brush").transition().duration(animation_time).call(brush);
+            //d3.select("g.brush").transition().duration(animation_time).call(brush);
+            chart_container.select(".brush").transition().call(brush);
+
 
             //Actualiza la grafic ade barras
             self._m_graficar_barras(data);
@@ -838,21 +849,62 @@ if (typeof Object.create !== 'function') {
         },
 
         _m_evento_brush: function () {
-            brush.on("brush", brushed);
-            function brushed() {
+
+            brush.on("brushend", brush_end);
+
+            function brush_end() {
                 x.domain(brush.empty() ? x_brush.domain() : brush.extent());
-                if (self.comparando) {
-                    //comparando
-                    //hacer lo mismo pero con todas lineas line-porciento
-                    var a = 90;
+
+                var dominio = x.domain();
+                var data = self.datos[0].data;
+
+                //obtener fecha inicial
+                var x0 = dominio[0];
+                var fechaInicio = dominio[0];
+                var ii = bisectDate(data, x0, 1);
+                var d0 = data[ii - 1];
+                var d1 = data[ii];
+                var startPos = 0;
+                if (x0 - d0.date > d1.date - x0) {
+                    startPos = ii;
+                    fechaInicio = d1.date;
                 } else {
-                    main_svg.select(".line-main").attr("d", valueline);
-                    main_svg.select(".x.axis").call(xAxis);
+                    startPos = ii - 1;
+                    fechaInicio = d0.date;
                 }
 
-                //focus.select(".area").attr("d", area);
-                //focus.select(".x.axis").call(xAxis);
-                //console.info(x.domain(),brush);
+                //obtener fecha final
+                x0 = dominio[1];
+                var fechaFin = dominio[1];
+                ii = bisectDate(data, x0, 1);
+                d0 = data[ii - 1];
+                d1 = data[ii];
+                var endPos = 1;
+                if (x0 - d0.date > d1.date - x0) {
+                    endPos = ii;
+                    fechaFin = d1.date;
+                } else {
+                    endPos = ii - 1;
+                    fechaFin = d0.date;
+                }
+
+                // El +1 es para que tome los datos hasta la posicion
+                data = data.slice(startPos, endPos + 1);
+                if (data.length > 0) {
+                    jQuery("#chart_start").val(formatFecha(fechaInicio));
+                    jQuery("#chart_end").val(formatFecha(fechaFin));
+                    if (!self.comparando) {
+                        self._m_calcular_porciento1(data);
+                        self._m_actualizar_grafica(data);
+                    }
+                    else {
+                        self.comparaciones["simbolos"].forEach(function (simbolo, i) {
+                            self._m_calcular_porciento(fechaInicio, fechaFin, i, simbolo);
+                        });
+                        self._m_graficar_comparaciones();
+                    }
+                }
+                return false;
             }
         },
         /**Metodo principal*/
@@ -1019,10 +1071,14 @@ if (typeof Object.create !== 'function') {
                 .attr("class", "area")
                 .attr("d", area);
 
+            //Eje x del brush
             g_brush.append("g")
                 .attr("class", "x_brush axis_brush")
                 .attr("transform", "translate(0," + self.configuracion.height3 + ")")
                 .call(xAxis_brush);
+
+            //Asignandole a el brush el rango seleccionado
+            brush.extent(x.domain());
 
             g_brush.append("g")
                 .attr("class", "brush")

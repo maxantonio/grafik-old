@@ -181,5 +181,6 @@ path {
 .axis_brush line {
     fill: none;
     stroke: #000;
+    stroke-width: 1;
     shape-rendering: crispEdges;
 }
