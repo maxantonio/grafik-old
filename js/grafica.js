@@ -14,13 +14,16 @@ if (typeof Object.create !== 'function') {
             id: "#chart", // id del elemento contenedor de la grafica, Debe estar creado previamente en el html de la pagina
             colores: [],
             valor: 5,
-            margin: {top: 20, right: 50, bottom: 150, left: 80},
-            margin2: {top: 50, realtop: 0, bottom: 0},
             width: 850, //ancho de la grafica por defecto
-            height: 500, // alto de la grafica por defecto
-            height2: 100, // alto de la grafica de barra
-            titulo: "Acciones"
+            height: 500, // alto de la grafica de linea
+            margin: {top: 5, right: 50, bottom: 150, left: 80},
 
+            height2: 100, // alto de la grafica de barra
+            margin2: {top: 50, realtop: 0, bottom: 0},
+
+            margin3: {top: 50, realtop: 0, bottom: 0},
+            height3: 80, // alto del brush
+            titulo: "Acciones"
         },
         datos: [], // cada uno tiene un objeto con titulo, datos, color
         comparaciones: [], //aqui van las comparaciones que se realizan entre acciones de empresas
@@ -83,7 +86,7 @@ if (typeof Object.create !== 'function') {
         },
 
         _m_graficar_comparaciones: function () {
-            var maxValue_porciento = 0;
+            var maxValue_porciento = 0, minValue_porciento = 0;
 
             var wrapper = d3.select(".leyenda>.wrapper");
             //Dominio para el eje Y
@@ -94,6 +97,11 @@ if (typeof Object.create !== 'function') {
 
                 maxValue_porciento = maxValue_porciento < tempMaxValue ? tempMaxValue : maxValue_porciento;
 
+                var tempMinValue = d3.min(data, function (d) {
+                    return +d.porciento;
+                });
+                minValue_porciento = minValue_porciento > tempMinValue ? tempMinValue : minValue_porciento;
+
                 //Agregando leyenda para cada uno de los simbolos
                 var sel = wrapper.select('span[data_simbolo="' + self.comparaciones["simbolos"][i] + '"]');
                 if (sel.empty()) {
@@ -102,12 +110,14 @@ if (typeof Object.create !== 'function') {
                 }
             });
 
-            if (maxValue_porciento == 0) {
-                //lo pongo igual a 2 para q se grafiquen de -2 hasta 2 los datos
-                maxValue_porciento = 2;
+            //valor adicional para sumarle a los ejes
+            var add = 0;
+            var tempTiksArray = y.ticks();
+            if (tempTiksArray > 2) {
+                //toma la diferencia entre 2 ticks para adicionar a la grafica uno mas
+                add = tempTiksArray[1] - tempTiksArray[0];
             } else {
-                //le incremento 1 para que se vea mejor en la grafica
-                maxValue_porciento += 1;
+                add = (maxValue_porciento - minValue_porciento) / (parseInt(yAxis.ticks()[0]) + 1);
             }
 
             //Actualizo el dominio del eje x
@@ -115,9 +125,15 @@ if (typeof Object.create !== 'function') {
                 return d.date;
             }));
 
-            y.domain([-maxValue_porciento, maxValue_porciento]);
+            y.domain([minValue_porciento - add, maxValue_porciento + add]);
+
             yAxis.tickFormat(function (tickValue) {
-                return tickValue + "%";
+                if (tickValue == "0")
+                    return tickValue + "%";
+                else if (parseFloat(tickValue.toFixed(2)) == '-0')
+                    return "0%";
+                else
+                    return tickValue.toFixed(2) + "%";
             });
 
             //Dominio para la grafica de barra
@@ -203,14 +219,13 @@ if (typeof Object.create !== 'function') {
                 return d.volume;
             })]);
 
-            y3.domain(y2.domain());
+            y2_1.domain(y2.domain());
 
             focus_barra.select(".y.axis")
                 .call(yAxis2);
 
             //Actualizar grafica de barras
             self._m_graficar_barras(data);
-            //dgfuentes
 
             //// Seleccionar los elementos, y los enlazo con los datos
             //var bars = focus_barra.selectAll("rect")
@@ -265,7 +280,7 @@ if (typeof Object.create !== 'function') {
 
             //MOUSE MOVE COMPARACIONES
             var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
-            self._m_mouse_move_comparaciones(rectangulo,data);
+            self._m_mouse_move_comparaciones(rectangulo, data);
         },
         /** Calcula los datos de las comparaciones para la empresa que se le pase por parametro */
         _m_calcular_porciento: function (fechaInicio, fechaFin, pos, simbolo) {
@@ -275,7 +290,7 @@ if (typeof Object.create !== 'function') {
             var baseValue = +data[0].close; //dia 0 del periodo que voy a analizar
             data.forEach(function (d, i) {
                 var tempValue = +data[i].close;
-                var t = tempValue / baseValue - 1;
+                var t = (tempValue / baseValue) - 1;
                 self.comparaciones["datos"][pos].push({
                     porciento: +t.toFixed(2), //redondeo a 2 lugares
                     date: d.date,
@@ -290,7 +305,7 @@ if (typeof Object.create !== 'function') {
             var baseValue = +data[0].close; //dia 0 del periodo que voy a analizar
             data.forEach(function (d, i) {
                 var tempValue = +data[i].close;
-                var t = tempValue / baseValue - 1;
+                var t = (tempValue / baseValue) - 1;
                 self.comparaciones["datos"][0].push({
                     porciento: +t.toFixed(2), //redondeo a 2 lugares
                     date: d.date,
@@ -409,10 +424,28 @@ if (typeof Object.create !== 'function') {
                 return d.date;
             }));
 
-            // Actualizo el dominio de los datos para el eje Y
-            y.domain([0, d3.max(data, function (d) {
+            var min = d3.min(data, function (d) {
                 return d.close;
-            }) + 1]);
+            });
+
+            var max = d3.max(data, function (d) {
+                return d.close;
+            });
+
+            //valor adicional para sumarle a los ejes
+            var add = 0;
+            var tempTiksArray = y.ticks();
+            if (tempTiksArray > 2) {
+                //toma la diferencia entre 2 ticks para adicionar a la grafica uno mas
+                add = tempTiksArray[1] - tempTiksArray[0];
+            } else
+                add = (max - min) / (parseInt(yAxis.ticks()[0]) + 1);
+
+            y.domain([min - add, max + add]);
+
+            //y.domain([0, d3.max(data, function (d) {
+            //    return d.close;
+            //}) + 1]);
 
             //Dominio para la grafica de barra
             x2.domain(data.map(function (d) {
@@ -423,7 +456,7 @@ if (typeof Object.create !== 'function') {
                 return d.volume;
             })]);
 
-            y3.domain(y2.domain());
+            y2_1.domain(y2.domain());
 
             //Esto es porque para las comparaciones le habia puesto un porciento
             yAxis.tickFormat(function (tickValue) {
@@ -697,7 +730,7 @@ if (typeof Object.create !== 'function') {
 
             bars.on('mouseover', function (d) {
                 tooltip.transition().style('opacity', .9);
-                tooltip.html('<span class="tooltip-text">' + formatDate(d.date) + '<br/>Volume: <b>' + d.volume + '</b></span>')
+                tooltip.html('<span class="tooltip-text">' + formatDate(d.date) + '<br/>Volume: <b>' + formato_numero(d.volume, 3, ".", ",") + '</b></span>')
                     .style('left', (d3.event.pageX ) + 'px')
                     .style('top', (d3.event.pageY - 50) + 'px');
 
@@ -803,6 +836,25 @@ if (typeof Object.create !== 'function') {
             }
             return true;
         },
+
+        _m_evento_brush: function () {
+            brush.on("brush", brushed);
+            function brushed() {
+                x.domain(brush.empty() ? x_brush.domain() : brush.extent());
+                if (self.comparando) {
+                    //comparando
+                    //hacer lo mismo pero con todas lineas line-porciento
+                    var a = 90;
+                } else {
+                    main_svg.select(".line-main").attr("d", valueline);
+                    main_svg.select(".x.axis").call(xAxis);
+                }
+
+                //focus.select(".area").attr("d", area);
+                //focus.select(".x.axis").call(xAxis);
+                //console.info(x.domain(),brush);
+            }
+        },
         /**Metodo principal*/
         m_graficar: function () {
             self = this;
@@ -814,6 +866,7 @@ if (typeof Object.create !== 'function') {
             self._m_btn_comparar(); //Inicializa los eventos click en el DropDown de comparar
             self._m_evento_click_periodos();
             self._m_evento_click_reset();
+            self._m_evento_brush();
             if (!self._m_preparar_Datos()) {
                 console.error("m_graficar -> Configuracion de datos incorrectos");
                 return;
@@ -840,9 +893,31 @@ if (typeof Object.create !== 'function') {
                 return d.date;
             }));
 
-            y.domain([0, d3.max(data, function (d) {
+            var min = d3.min(data, function (d) {
                 return d.close;
-            }) + 1]);
+            });
+
+            var max = d3.max(data, function (d) {
+                return d.close;
+            });
+
+            var add = 0;
+            var tempTiksArray = y.ticks();
+            if (tempTiksArray > 2) {
+                //toma la diferencia entre 2 ticks para adicionar a la grafica uno mas
+                add = tempTiksArray[1] - tempTiksArray[0];
+            } else {
+                add = (max - min) / (parseInt(yAxis.ticks()[0]) + 1);
+            }
+
+            y.domain([min - add, max + add]);
+
+            x_brush.domain(d3.extent(self.datos[0].data, function (d) {
+                return d.date;
+            }));
+            y_brush.domain(d3.extent(self.datos[0].data, function (d) {
+                return d.close;
+            }));
 
             //Dominio para la grafica de barra
             x2.domain(data.map(function (d) {
@@ -852,7 +927,7 @@ if (typeof Object.create !== 'function') {
             y2.domain([0, d3.max(data, function (d) {
                 return d.volume;
             })]);
-            y3.domain(y2.domain());
+            y2_1.domain(y2.domain());
 
             // Grillas para el eje X
             svg.append("g")
@@ -938,6 +1013,24 @@ if (typeof Object.create !== 'function') {
                 .style("fill", "#ffffff") // color blanco el texto
                 .text(this.datos[0].titulo);
 
+            // Agregandole los datos al brush
+            g_brush.append("path")
+                .datum(self.datos[0].data)
+                .attr("class", "area")
+                .attr("d", area);
+
+            g_brush.append("g")
+                .attr("class", "x_brush axis_brush")
+                .attr("transform", "translate(0," + self.configuracion.height3 + ")")
+                .call(xAxis_brush);
+
+            g_brush.append("g")
+                .attr("class", "brush")
+                .call(brush)
+                .selectAll("rect")
+                .attr("y", -6)
+                .attr("height", self.configuracion.height3 + 7);
+
             // Agregando un rectangulo para capturar el mouse
             //Este rectangulo tiene las mismas dimeciones que la grafica
             var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
@@ -977,6 +1070,7 @@ if (typeof Object.create !== 'function') {
             self.configuracion.width = self.configuracion.width - self.configuracion.margin.left - self.configuracion.margin.right;
             self.configuracion.height = self.configuracion.height - self.configuracion.margin.top - self.configuracion.margin.bottom;
             self.configuracion.margin2.realtop = self.configuracion.height + self.configuracion.margin2.top;
+            self.configuracion.margin3.realtop = self.configuracion.margin2.realtop + self.configuracion.margin3.top;
 
             self.comparaciones["simbolos"] = [];
             self.comparaciones["datos"] = [];
@@ -1017,7 +1111,7 @@ if (typeof Object.create !== 'function') {
             y2 = d3.scale.linear().range([0, self.configuracion.height2]);
 
             //Esta se usa solo para la grafica que indica el eje y de la grafica de barras
-            y3 = d3.scale.linear().range([self.configuracion.height2, 0]);
+            y2_1 = d3.scale.linear().range([self.configuracion.height2, 0]);
 
             // Eje X y Eje y
             xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5);
@@ -1025,7 +1119,7 @@ if (typeof Object.create !== 'function') {
 
             //Ejes para la grafica de barra
             //xAxis2 = d3.svg.axis().scale(x2).orient("bottom").tickFormat(d3.time.format("%d"));
-            yAxis2 = d3.svg.axis().scale(y3).orient("left").ticks(3);
+            yAxis2 = d3.svg.axis().scale(y2_1).orient("left").ticks(3);
 
             // Define que valores va a graficar la linea para cada eje
             valueline = d3.svg.line()
@@ -1034,6 +1128,22 @@ if (typeof Object.create !== 'function') {
                 })
                 .y(function (d) {
                     return y(d.close);
+                });
+
+            //Datos para la grafica del brush
+            x_brush = d3.time.scale().range([0, self.configuracion.width]);
+            y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
+
+            xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom");
+            brush = d3.svg.brush().x(x_brush);
+            area = d3.svg.area()
+                .interpolate("monotone")
+                .x(function (d) {
+                    return x_brush(d.date);
+                })
+                .y0(self.configuracion.height3)
+                .y1(function (d) {
+                    return y_brush(d.close);
                 });
         }
         ,
@@ -1069,8 +1179,15 @@ if (typeof Object.create !== 'function') {
                 .attr("class", "focus")
                 .style("display", "none");
 
+            // TODO la 2 linea es para quitar la grafica de barras e ir probando el brush
             focus_barra = main_svg.append("g")
+                .style("display", "none") //temporal para probar la otra grafica dgfuentes
                 .attr("class", "focus_barra")
+                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
+
+            //g contenedor del brush
+            g_brush = main_svg.append("g")
+                .attr("class", "g_brush")
                 .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
 
             /* Posicionar el leyenda*/
@@ -1265,7 +1382,7 @@ if (typeof Object.create !== 'function') {
                 chart_container.select("#high").text(d.hight);
                 chart_container.select("#low").text(d.low);
                 chart_container.select("#close").text(d.close);
-                chart_container.select("#volumen").text(d.volume);
+                chart_container.select("#volumen").text(formato_numero(d.volume, 3, ".", ","));
                 chart_container.select("#change").text(change + "%");
 
                 var barra = focus_barra.select('rect[data-pos="' + pos + '"]');
@@ -1307,7 +1424,7 @@ if (typeof Object.create !== 'function') {
         }
         ,
 
-        _m_mouse_move_comparaciones: function (rectangulo,data) {
+        _m_mouse_move_comparaciones: function (rectangulo, data) {
 
             rectangulo.on("mousemove", mouse_move_comparaciones);
 
@@ -1357,7 +1474,7 @@ if (typeof Object.create !== 'function') {
                 d3.select("#high").text(dt.close);
                 d3.select("#low").text(dt.low);
                 d3.select("#close").text(dt.close);
-                d3.select("#volumen").text(dt.volume);
+                d3.select("#volumen").text(formato_numero(dt.volume, 3, ".", ","));
 
                 var barra = focus_barra.select('rect[data-pos="' + pos1 + '"]');
                 var tempColor = barra.style.fill;
@@ -1400,6 +1517,33 @@ if (typeof Object.create !== 'function') {
 
     };
 
+
+    function formato_numero(numero, decimales, separador_decimal, separador_miles) {
+
+        //Si es 0 entonces no es necesario hacer nada
+        if (parseInt(numero) == 0)
+            return numero;
+
+        numero = parseFloat(numero);
+        if (isNaN(numero)) {
+            return "";
+        }
+        if (decimales !== undefined) {
+            // Redondeamos
+            numero = numero.toFixed(decimales);
+        }
+        // Convertimos el punto en separador_decimal
+        numero = numero.toString().replace(".", separador_decimal !== undefined ? separador_decimal : ",");
+        if (separador_miles) {
+            // Añadimos los separadores de miles
+            var miles = new RegExp("(-?[0-9]+)([0-9]{3})");
+            while (miles.test(numero)) {
+                numero = numero.replace(miles, "$1" + separador_miles + "$2");
+            }
+        }
+        return numero;
+    }
+
     //Funciones para dibujar las lineas discontinuas
     function dibujar_eje_x(x_main, ticks) {
         ticks || ( ticks = 5 ); //asigna valor por defecto en caso de que no se pase ningun parametro
@@ -1415,3 +1559,4 @@ if (typeof Object.create !== 'function') {
         return Object.create(mi_grafica).init(configuracion);
     };
 })();
+

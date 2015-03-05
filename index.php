@@ -35,7 +35,7 @@
             texto: "5D",
             cantidad: 5,
             tipo: "dia",
-            seleccionado: true
+            seleccionado: false
         }, {
             texto: "10D",
             cantidad: 10,
@@ -45,7 +45,7 @@
             texto: "1M",
             cantidad: 1,
             tipo: "mes",
-            seleccionado: false
+            seleccionado: true
         }, {
             texto: "3M",
             cantidad: 3,
