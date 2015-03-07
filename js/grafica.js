@@ -12,17 +12,16 @@ if (typeof Object.create !== 'function') {
 
         configuracion: {
             id: "#chart", // id del elemento contenedor de la grafica, Debe estar creado previamente en el html de la pagina
-            colores: [],
-            valor: 5,
+            colores: d3.scale.category10(),
             width: 850, //ancho de la grafica por defecto
             height: 500, // alto de la grafica de linea
             margin: {top: 5, right: 50, bottom: 150, left: 80},
 
-            height2: 100, // alto de la grafica de barra
-            margin2: {top: 50, realtop: 0, bottom: 0},
+            height2: 50, // alto de la grafica de barra
+            margin2: {top: 35, realtop: 0, bottom: 0},
 
-            margin3: {top: 50, realtop: 0, bottom: 0},
-            height3: 80, // alto del brush
+            margin3: {top: 60, realtop: 0, bottom: 0},
+            height3: 40, // alto del brush
             titulo: "Acciones"
         },
         datos: [], // cada uno tiene un objeto con titulo, datos, color
@@ -32,54 +31,54 @@ if (typeof Object.create !== 'function') {
                 texto: "1D",
                 cantidad: 1,
                 tipo: "dia",
-                seleccionado: true
+                activo: true
             }, {
                 texto: "5D",
                 cantidad: 5,
                 tipo: "dia",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "1m",
                 cantidad: 1,
                 tipo: "mes",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "3m",
                 cantidad: 3,
                 tipo: "mes",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "6m",
                 cantidad: 6,
                 tipo: "mes",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "YTD",
                 cantidad: 0,
                 tipo: "hasta_la_fecha",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "1y",
                 cantidad: 1,
                 tipo: "anno",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "2y",
                 cantidad: 2,
                 tipo: "anno",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "5y",
                 cantidad: 5,
                 tipo: "anno",
-                seleccionado: false
+                activo: false
             }, {
                 texto: "10y",
                 cantidad: 10,
                 tipo: "anno",
-                seleccionado: false
+                activo: false
             }
-        ], //cada periodo tiene texto, cantidad,seleccionado,
+        ], //cada periodo tiene texto, cantidad,activo,
         init: function (configuracion) {
             this.configuracion = jQuery.extend({}, this.configuracion, configuracion);
             return this;
@@ -284,7 +283,7 @@ if (typeof Object.create !== 'function') {
         },
         /** Calcula los datos de las comparaciones para la empresa que se le pase por parametro */
         _m_calcular_porciento: function (fechaInicio, fechaFin, pos, simbolo) {
-            /** Coger los datos de esa empresa en el periodo seleccionado */
+            /** Coger los datos de esa empresa en el periodo activo */
             var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, simbolo);
             self.comparaciones["datos"][pos] = []; //limpio los datos que habian
             var baseValue = +data[0].close; //dia 0 del periodo que voy a analizar
@@ -460,8 +459,7 @@ if (typeof Object.create !== 'function') {
 
             //Esto es porque para las comparaciones le habia puesto un porciento
             yAxis.tickFormat(function (tickValue) {
-                
-                return tickValue;
+                return tickValue.toFixed(2);
             });
 
             // MOSTRAR TODAS LAS COSAS QUE ESTABAN OCULTAS, SI HAY
@@ -472,13 +470,12 @@ if (typeof Object.create !== 'function') {
              * si lo senalo con el main_svg se cancela el transition y da error.
              * */
 
-
             chart_container.select(".line-main").datum(data);
 
             main_svg = d3.select("#chart-container>svg")
                 .transition()
-                .duration(animation_time)
-                .ease('elastic');
+                .duration(animation_time);
+            //.ease('elastic');
 
             //Actualiza los valores del eje x en las grillas
             main_svg.select("g.grid.x")
@@ -688,29 +685,128 @@ if (typeof Object.create !== 'function') {
         _m_datos_correctos: function () {
             /** aqui hay que validar todas las opciones de configuracion,
              *  que todas tengas los datos correctos */
-            return true;
+
+            if (validar_configuracion() && validar_periodos() && validar_datos())
+                return true;
+            return false;
+
+            function validar_configuracion() {
+                if (self.configuracion.id == undefined) {
+                    console.error("Id no esta definido");
+                    return false;
+                } else {
+                    self.configuracion.id = self.configuracion.id.trim();
+                    if (self.configuracion.id.length == 0) {
+                        console.error("Id esta vacío");
+                        return false;
+                    }
+                }
+
+                if (parseInt(self.configuracion.width) <= 0 || parseInt(self.configuracion.height) <= 0 ||
+                    parseInt(self.configuracion.height2) <= 0 || parseInt(self.configuracion.height3) <= 0
+                ) {
+                    console.error("Error en configuracion de height o width");
+                    return false;
+                }
+                return true;
+            }
+
+            function validar_datos() {
+                //titulo: "MAXCOM",
+                //  data: uno,
+                //color: "steelblue"
+
+                if (Array.isArray(self.datos)) {
+                    if (self.datos.length == 0) {
+                        console.error("No hay datos para graficar.");
+                        return false;
+                    } else {
+                        self.datos.forEach(function (d, i) {
+
+                            if (d.titulo == undefined) {
+                                d.titulo = "Empresa #" + i
+                            }
+
+                            if (d.data == undefined) {
+                                console.error("Datos no definidos para " + d.titulo);
+                                return false;
+                            } else {
+                                if (!Array.isArray(d.data)) {
+                                    console.error("Propiedad data bede ser un arreglo");
+                                    return false;
+                                }
+                            }
+                            // si no se especifico el color entonces tomara
+                            // los colores por la escala de colores de d3 de 10 colores
+                            // d3.scale.category10()
+                            if (d.color == undefined) {
+                                d.color = self.configuracion.colores(i);
+                            }
+
+                        });
+                    }
+                }
+                return true;
+            }
+
+            function validar_periodos() {
+                if (!Array.isArray(self.periodos)) {
+                    console.error("Periodos debe ser un arreglo.");
+                    return false;
+                } else {
+                    //comprobar que tenga las propiedades
+                    self.periodos.forEach(function (p, i) {
+                        if (p.texto == undefined || p.texto == undefined || p.texto == undefined || p.activo == undefined) {
+                            console.error("Error en la configuracíon de periodos");
+                            return false;
+                        } else {
+                            if (isNaN(p.cantidad)) {
+                                console.error("Al atributo 'cantidad' debe ser un #");
+                                return false;
+                            }
+                            p.tipo = p.tipo.trim();
+                            if(p.tipo.length==0){
+                                console.error("'tipo' no puede ser vacio");
+                                return false;
+                            }
+                            if (!(p.tipo == "dia" || p.tipo == "semana" || p.tipo == "mes" || p.tipo == "anno" || p.tipo == "hasta_la_fecha")) {
+                                console.error("Tipo de periodo no permitodo");
+                                return false;
+                            }
+                            p.texto = p.texto.trim();
+                            if((p.texto.length==0)){
+                                console.error("");
+                                return false;
+                            }
+                        }
+                    });
+                }
+                return true;
+            }
         }
+
         ,
         /** Este metodo, devuelve un arreglo con los datos del periodo que selecciono el usuario. Ver periodos.*/
         _m_seleccionar_datos_a_graficar: function () {
-            /** Entre todos los periodos, debe haber siempre 1 seleccionado*/
+            /** Entre todos los periodos, debe haber siempre 1 activo*/
             var pos_selected = -1;
             for (var i = 0; i < self.periodos.length; i++) {
-                if (self.periodos[i].seleccionado) {
+                if (self.periodos[i].activo) {
                     pos_selected = i;
                     break;
                 }
             }
 
-            if (pos_selected == -1) { //si no habia aninguno seleccionado
-                pos_selected = 0; //toma el 1er elemento de la lista y lomarca como seleccionado
-                self.periodos[0].seleccionado = true;
+            if (pos_selected == -1) { //si no habia aninguno activo
+                pos_selected = 0; //toma el 1er elemento de la lista y lomarca como activo
+                self.periodos[0].activo = true;
             }
             var tipo = self.periodos[pos_selected].tipo;
             var cant = self.periodos[pos_selected].cantidad;
             //este metodo lleva 2 parametros, si no pasas la fecha final. revisar el metodo para ver que pasa.
             return self._m_obtener_datos_de_intervalo(self._m_obtener_fechaInicio(tipo, cant), null, self.datos[0].titulo);
-        },
+        }
+        ,
 
         _m_graficar_barras: function (data) {
 
@@ -780,7 +876,8 @@ if (typeof Object.create !== 'function') {
                 .attr("x2", self.configuracion.width)
                 .style("stroke", "black")
                 .style("opacity", "1");
-        },
+        }
+        ,
 
         _m_evento_click_reset: function () {
             d3.select("#btn_reiniciar").on("click", function () {
@@ -808,7 +905,7 @@ if (typeof Object.create !== 'function') {
                     //y de 1 vez cambiarle el fondo a color verde
 
                     // Luego obtener los datos
-                    //y graficar los del intervalo seleccionado inicialmente por el usuario
+                    //y graficar los del intervalo activo inicialmente por el usuario
                     var simbolo_base = self.datos[0].titulo;
                     focus.select('circle[data_simbolo="' + simbolo_base + '"]').remove();
                     chart_container.select('span[data_simbolo="' + simbolo_base + '"]').remove();
@@ -817,7 +914,8 @@ if (typeof Object.create !== 'function') {
                 var data = self._m_seleccionar_datos_a_graficar();
                 self._m_actualizar_grafica(data);
             });
-        },
+        }
+        ,
         _m_preparar_Datos: function () {
             //En esta funcion se parsean todas las fechas
             for (var i = 0; i < self.datos.length; i++) {
@@ -846,7 +944,8 @@ if (typeof Object.create !== 'function') {
                 self.datos[i].data = result;
             }
             return true;
-        },
+        }
+        ,
 
         _m_evento_brush: function () {
 
@@ -906,7 +1005,8 @@ if (typeof Object.create !== 'function') {
                 }
                 return false;
             }
-        },
+        }
+        ,
         /**Metodo principal*/
         m_graficar: function () {
             self = this;
@@ -1069,6 +1169,7 @@ if (typeof Object.create !== 'function') {
             g_brush.append("path")
                 .datum(self.datos[0].data)
                 .attr("class", "area")
+                .style("fill", self.datos[0].color)
                 .attr("d", area);
 
             //Eje x del brush
@@ -1077,7 +1178,7 @@ if (typeof Object.create !== 'function') {
                 .attr("transform", "translate(0," + self.configuracion.height3 + ")")
                 .call(xAxis_brush);
 
-            //Asignandole a el brush el rango seleccionado
+            //Asignandole a el brush el rango activo
             brush.extent(x.domain());
 
             g_brush.append("g")
@@ -1119,7 +1220,8 @@ if (typeof Object.create !== 'function') {
                 //svg.select('.line-main')
                 //    .attr("d", valueline);
             }
-        },
+        }
+        ,
 
         _m_iniciar_variables: function () {
             this._m_crear_chart_header();
@@ -1215,7 +1317,7 @@ if (typeof Object.create !== 'function') {
             main_svg = d3.select("#main_chart_svg #chart-container")
                 .append("svg")
                 .attr("id", "chart_svg")
-                //.style("background", "#F0F6FD")
+                .style("background", "#F0F6FD")
                 .attr("width", self.configuracion.width + self.configuracion.margin.left + self.configuracion.margin.right)
                 .attr("height", self.configuracion.height + self.configuracion.margin.top + self.configuracion.margin.bottom);
 
@@ -1237,14 +1339,14 @@ if (typeof Object.create !== 'function') {
 
             // TODO la 2 linea es para quitar la grafica de barras e ir probando el brush
             focus_barra = main_svg.append("g")
-                .style("display", "none") //temporal para probar la otra grafica dgfuentes
+                //.style("display", "none") //temporal para probar la otra grafica dgfuentes
                 .attr("class", "focus_barra")
                 .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
 
             //g contenedor del brush
             g_brush = main_svg.append("g")
                 .attr("class", "g_brush")
-                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
+                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin3.realtop + ")");
 
             /* Posicionar el leyenda*/
             d3.select(".leyenda")
@@ -1443,12 +1545,12 @@ if (typeof Object.create !== 'function') {
 
                 var barra = focus_barra.select('rect[data-pos="' + pos + '"]');
                 var tempColor = barra.style.fill;
-                if (temp != pos) {
-                    barra = focus_barra.select('rect[data-pos="' + temp + '"]');
-                    barra.style("fill", tempColor).style('opacity', 1);
-                } else {
-                    barra.style("fill", "#FFBB78").style('opacity', .5);
-                }
+                //if (temp != pos) {
+                //    barra = focus_barra.select('rect[data-pos="' + temp + '"]');
+                //    barra.style("fill", tempColor).style('opacity', 1);
+                //} else {
+                //    barra.style("fill", "#FFBB78").style('opacity', .5);
+                //}
                 temp = pos;
 
                 focus.select(".x")

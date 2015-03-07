@@ -172,8 +172,8 @@ path {
     shape-rendering: crispEdges;
 }
 
+
 .area {
-    fill: steelblue;
     clip-path: url(#clip);
 }
 
