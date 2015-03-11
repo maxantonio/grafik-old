@@ -674,8 +674,11 @@ if (typeof Object.create !== 'function') {
                     break;
                 case "hasta_la_fecha":
                     /** hasta la 1ra fecha registrada del anno actual*/
-                        // puse el 1ro de enero del anno actual, por el momento.
                     fechaInicio = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
+                    //Comprobar 1ro que esta fecha es valida dentro del intervalo
+                    //analizar que hago si no esta en el intervalo
+                    var pos = bisectDate(self.datos[0].data, fechaInicio);
+                    fechaInicio = self.datos[0].data[pos].date;
                     break;
             }
             return fechaInicio;
@@ -765,7 +768,7 @@ if (typeof Object.create !== 'function') {
                                 return false;
                             }
                             p.tipo = p.tipo.trim();
-                            if(p.tipo.length==0){
+                            if (p.tipo.length == 0) {
                                 console.error("'tipo' no puede ser vacio");
                                 return false;
                             }
@@ -774,7 +777,7 @@ if (typeof Object.create !== 'function') {
                                 return false;
                             }
                             p.texto = p.texto.trim();
-                            if((p.texto.length==0)){
+                            if ((p.texto.length == 0)) {
                                 console.error("");
                                 return false;
                             }
@@ -1197,28 +1200,65 @@ if (typeof Object.create !== 'function') {
         ,
 
         _m_resize: function () {
+
             d3.select(window).on('resize', resize);
+
             resize();
+
             function resize() {
 
-                //var width = parseInt(d3.select("#chart-container>svg").style("width")) - self.configuracion.margin.left * 2,
-                //  height = parseInt(d3.select("#chart-container>svg").style("height")) - self.configuracion.margin.bottom * 2;
-                //
-                //x.range([0, width]);
-                //y.range([height, 0]);
-                //
-                //yAxis.ticks(Math.max(height / 50, 2));
-                //xAxis.ticks(Math.max(width / 50, 2));
-                //
-                //svg.select('.x.axis')
-                //    .attr("transform", "translate(0," + height + ")")
-                //    .call(xAxis);
-                //
-                //svg.select('.y.axis')
-                //    .call(yAxis);
-                //
-                //svg.select('.line-main')
-                //    .attr("d", valueline);
+                var width = parseInt(d3.select("#chart-container>svg").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
+
+                self.configuracion.width = width;
+                //console.info(width, self.configuracion.width);
+
+                //Actualizando grafica de linea
+                x.range([0, width]);
+                xAxis.ticks(Math.max(width / 50, 2));
+
+                //Actualizar eje x
+                svg.select('.x.axis')
+                    .call(xAxis);
+
+                //Actualizar lilnea
+                svg.select('.line-main')
+                    .attr("d", valueline);
+
+                //Actualizar lineas tranparentes
+                svg.select("g.grid.x")
+                    .call(dibujar_eje_x(x)
+                        .tickSize(-self.configuracion.height, 0, 0)
+                        .tickFormat("")
+                );
+                //--------------------------------------------------
+
+                //Actualizando grafica de barras
+                x2.rangeBands([0, width], .02);
+
+                //linea del eje x
+                focus_barra.select('.line-bottom').attr("x2",width);
+
+                focus_barra.selectAll(".bar")
+                    .attr("x", function (d) {
+                        return x2(d.date);
+                    })
+                    .attr("width", x2.rangeBand());
+
+                //--------------------------------------------------
+
+                //Actualizando brush
+                x_brush.range([0, width]);
+                xAxis_brush.ticks(Math.max(width / 50, 2));
+
+                //Actualizando eje x
+                g_brush.select(".x_brush").call(xAxis_brush);
+
+                //Actualizando grafica de area
+                g_brush.select(".area")
+                    .attr("d", area);
+
+
+
             }
         }
         ,
