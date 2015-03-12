@@ -165,7 +165,7 @@ if (typeof Object.create !== 'function') {
                     .tickFormat("")
             );
 
-            var linea_porciento = d3.svg.line()
+            linea_porciento = d3.svg.line()
                 .x(function (d) {
                     return x(d.date);
                 })
@@ -1210,7 +1210,14 @@ if (typeof Object.create !== 'function') {
                 var width = parseInt(d3.select("#chart-container>svg").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
 
                 self.configuracion.width = width;
-                //console.info(width, self.configuracion.width);
+
+                // Cambiar ancho del mouse-move
+                svg.select(".mouse-move")
+                    .attr("width", width);
+
+                //Actualizar tamano de linea discontinua horizontal
+                focus.select(".y.linea-horizontal")
+                    .attr("x1",width);
 
                 //Actualizando grafica de linea
                 x.range([0, width]);
@@ -1220,14 +1227,17 @@ if (typeof Object.create !== 'function') {
                 svg.select('.x.axis')
                     .call(xAxis);
 
-                //Actualizar lilnea
-                svg.select('.line-main')
-                    .attr("d", valueline);
 
                 //Actualizar lineas tranparentes
                 svg.select("g.grid.x")
                     .call(dibujar_eje_x(x)
                         .tickSize(-self.configuracion.height, 0, 0)
+                        .tickFormat("")
+                );
+
+                main_svg.select("g.grid.y")
+                    .call(dibujar_eje_y(y)
+                        .tickSize(-self.configuracion.width, 0, 0)
                         .tickFormat("")
                 );
                 //--------------------------------------------------
@@ -1236,14 +1246,13 @@ if (typeof Object.create !== 'function') {
                 x2.rangeBands([0, width], .02);
 
                 //linea del eje x
-                focus_barra.select('.line-bottom').attr("x2",width);
+                focus_barra.select('.line-bottom').attr("x2", width);
 
                 focus_barra.selectAll(".bar")
                     .attr("x", function (d) {
                         return x2(d.date);
                     })
                     .attr("width", x2.rangeBand());
-
                 //--------------------------------------------------
 
                 //Actualizando brush
@@ -1257,8 +1266,18 @@ if (typeof Object.create !== 'function') {
                 g_brush.select(".area")
                     .attr("d", area);
 
+                if(self.comparando){
+                    svg.selectAll(".line.line-porciento")
+                        .attr("d", linea_porciento)
+                }else{
+                    //Actualizar lilnea
+                    svg.select('.line-main')
+                        .attr("d", valueline);
+                }
 
 
+
+                //---------------------------------------------------
             }
         }
         ,
