@@ -5,6 +5,7 @@
 #main_chart_svg {
     /*border: 1px solid #a8aeb5;*/
     max-width: 850px;
+    min-width: 320px;
     width: 100%;
     background-color: #F0F6FD;
     padding: 5px 0 0 5px;
