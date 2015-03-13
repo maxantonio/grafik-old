@@ -1628,12 +1628,12 @@ if (typeof Object.create !== 'function') {
 
                 var barra = focus_barra.select('rect[data-pos="' + pos + '"]');
                 var tempColor = barra.style.fill;
-                //if (temp != pos) {
-                //    barra = focus_barra.select('rect[data-pos="' + temp + '"]');
-                //    barra.style("fill", tempColor).style('opacity', 1);
-                //} else {
-                //    barra.style("fill", "#FFBB78").style('opacity', .5);
-                //}
+                if (temp != pos) {
+                    barra = focus_barra.select('rect[data-pos="' + temp + '"]');
+                    barra.style("fill", tempColor).style('opacity', 1);
+                } else {
+                    barra.style("fill", "#FFBB78").style('opacity', .5);
+                }
                 temp = pos;
 
                 focus.select(".x")
