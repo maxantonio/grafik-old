@@ -1153,7 +1153,7 @@ if (typeof Object.create !== 'function') {
                 .attr('width', current_date_width)
                 .attr('height', current_date_height)
                 .attr('x', 0)
-                .attr('y', -3 * self.configuracion.margin.top) // esto es para que por defecto no se vea en la grafica
+                .attr('y', -2 * current_date_height) // esto es para que por defecto no se vea en la grafica
                 .attr("rx", 0)         // set the x corner curve radius
                 .attr("ry", 0)        // set the y corner curve radius
                 .style('fill', self.datos[0].color);
@@ -1164,7 +1164,7 @@ if (typeof Object.create !== 'function') {
                 //.attr("text-anchor", "middle")
                 .attr('class', "current_date_text")
                 .attr("x", 0)
-                .attr('y', -3 * self.configuracion.margin.top)
+                .attr('y', -2 * current_date_height)
                 .style("fill", "#ffffff") // color blanco el texto
                 .text(this.datos[0].titulo);
 
@@ -1210,32 +1210,36 @@ if (typeof Object.create !== 'function') {
                 var width = parseInt(d3.select("#chart-container>svg").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
 
                 self.configuracion.width = width;
+                //console.info(parseInt(d3.select("#chart-container>svg").style("width")));
+
+                d3.select(".leyenda")
+                    .style("left", self.configuracion.width + self.configuracion.margin.left + "px");
 
                 // Cambiar ancho del mouse-move
-                svg.select(".mouse-move")
+                chart_container.select(".mouse-move")
                     .attr("width", width);
 
                 //Actualizar tamano de linea discontinua horizontal
-                focus.select(".y.linea-horizontal")
-                    .attr("x1",width);
+                chart_container.select(".y.linea-horizontal")
+                    .attr("x1", width);
 
                 //Actualizando grafica de linea
                 x.range([0, width]);
-                xAxis.ticks(Math.max(width / 50, 2));
+                //xAxis.ticks(Math.max((width / 50) - 2, 2));
+                xAxis.ticks(3);
 
                 //Actualizar eje x
-                svg.select('.x.axis')
+                chart_container.select(".g-main").select('.x.axis')
                     .call(xAxis);
 
-
                 //Actualizar lineas tranparentes
-                svg.select("g.grid.x")
+                chart_container.select(".g-main").select("g.grid.x")
                     .call(dibujar_eje_x(x)
                         .tickSize(-self.configuracion.height, 0, 0)
                         .tickFormat("")
                 );
 
-                main_svg.select("g.grid.y")
+                chart_container.select(".g-main").select("g.grid.y")
                     .call(dibujar_eje_y(y)
                         .tickSize(-self.configuracion.width, 0, 0)
                         .tickFormat("")
@@ -1257,27 +1261,30 @@ if (typeof Object.create !== 'function') {
 
                 //Actualizando brush
                 x_brush.range([0, width]);
-                xAxis_brush.ticks(Math.max(width / 50, 2));
-
-                //Actualizando eje x
-                g_brush.select(".x_brush").call(xAxis_brush);
+                xAxis_brush.ticks(Math.max((width / 50) - 2, 2));
 
                 //Actualizando grafica de area
                 g_brush.select(".area")
                     .attr("d", area);
 
-                if(self.comparando){
-                    svg.selectAll(".line.line-porciento")
+                //Actualizando eje x del brush
+                g_brush.select(".x_brush")
+                    .call(xAxis_brush);
+
+                brush.x(x_brush);
+                g_brush.select(".brush")
+                    .call(brush);
+
+                //----------------------------------------------------
+
+                if (self.comparando) {
+                    chart_container.select(".g-main").selectAll(".line.line-porciento")
                         .attr("d", linea_porciento)
-                }else{
+                } else {
                     //Actualizar lilnea
-                    svg.select('.line-main')
+                    chart_container.select(".g-main").select('.line-main')
                         .attr("d", valueline);
                 }
-
-
-
-                //---------------------------------------------------
             }
         }
         ,
@@ -1352,7 +1359,9 @@ if (typeof Object.create !== 'function') {
             y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
 
             xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom");
+
             brush = d3.svg.brush().x(x_brush);
+
             area = d3.svg.area()
                 .interpolate("monotone")
                 .x(function (d) {
@@ -1376,7 +1385,7 @@ if (typeof Object.create !== 'function') {
             main_svg = d3.select("#main_chart_svg #chart-container")
                 .append("svg")
                 .attr("id", "chart_svg")
-                .style("background", "#F0F6FD")
+                //.style("background", "#F0F6FD")
                 .attr("width", self.configuracion.width + self.configuracion.margin.left + self.configuracion.margin.right)
                 .attr("height", self.configuracion.height + self.configuracion.margin.top + self.configuracion.margin.bottom);
 
@@ -1409,7 +1418,6 @@ if (typeof Object.create !== 'function') {
 
             /* Posicionar el leyenda*/
             d3.select(".leyenda")
-                .style("left", self.configuracion.width + self.configuracion.margin.left + "px")
                 .style("left", self.configuracion.width + self.configuracion.margin.left + 5 + "px")
                 //.style("top", self.configuracion.margin.top - 20 + "px")
                 .style("display", "none");
@@ -1452,7 +1460,7 @@ if (typeof Object.create !== 'function') {
                 LI += '<li><a data-empresa="' + d.titulo + '" data-value="' + i + '" href="#" class="comparadores"> <span data-operacion="+" class="operacion">+</span>' + d.titulo + '</a></li>';
             }
 
-            var btnDropdown = '<div class="btn-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
+            var btnDropdown = '<div class="btn-group form-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
                 'Comparar<span class="caret"></span></button><ul class="dropdown-menu comparar">' + LI + '</ul></div>';
 
             var indicadores = [{nombre: 'Indicador A', simbolo: 'A'}, {
@@ -1464,7 +1472,7 @@ if (typeof Object.create !== 'function') {
                 var ind = indicadores[pos];
                 Li_indicadores += '<li><a data-indicador="' + ind.simbolo + '" data-value="' + ind.nombre + '" href="#" class="indicador"> <span data-operacion="+" class="operacion">+</span>' + ind.nombre + '</a></li>';
             }
-            var btnIndicadores = '<div class="btn-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
+            var btnIndicadores = '<div class="form-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
                 'Indicadores<span class="caret"></span></button><ul class="dropdown-menu">' + Li_indicadores + '</ul></div>';
 
             var btnReiniciar = '<div class="form-group"> <button id="btn_reiniciar" class="btn btn-default" type="button">Reiniciar</button></div>';
@@ -1473,9 +1481,10 @@ if (typeof Object.create !== 'function') {
 
             var contenedor_fecha =
                 '<div class="parametros">' +
-                '<form role="form" class="form-inline">' +
+                '<div class="todos">' +
                 input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar +
-                '</form>' +
+                '<div class="clearfix"></div>' +
+                '</div>' +
                 '</div>' +
                 '<div class="clearfix"></div>';
             chart_header.html(chart_header.html() + contenedor_fecha);
@@ -1558,9 +1567,10 @@ if (typeof Object.create !== 'function') {
                     //muestra el rect que contiene la fecha actual
                     d3.select('.current_date').style('display', null);
                     d3.select('.current_date_text').style('display', null);
+
                 }).on("mouseout", function () {
                     focus.style("display", "none");
-                    d3.select('#main_chart_svg .leyenda').style('display', 'none');
+                    //d3.select('#main_chart_svg .leyenda').style('display', 'none');
                     d3.select('#main_chart_svg .current_date').style('display', 'none');
                     d3.select('#main_chart_svg .current_date_text').style('display', "none");
                 });

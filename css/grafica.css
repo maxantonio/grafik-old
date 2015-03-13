@@ -13,7 +13,6 @@
     margin-top: 10px;
     height: 100%;
     width: 100%;
-    border: 1px solid green;
     max-width: 850px;
 }
 
@@ -102,6 +101,12 @@ path {
 
 #main_chart_svg .form-group {
     margin-left: 5px;
+    float: left;
+    margin-bottom: 0;
+}
+
+#main_chart_svg .chart-rangos {
+    margin-bottom: 5px;
 }
 
 #main_chart_svg .operacion {
