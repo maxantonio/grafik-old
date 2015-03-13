@@ -2,6 +2,8 @@
 <html>
 <head>
     <title></title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/jquery-ui.css">
 
@@ -15,7 +17,7 @@
 
 </head>
 <body>
-<div id="container" style="margin-left: 50px; margin-top: 30px">
+<div id="container">
     <div id="grafica"></div>
 </div>
 

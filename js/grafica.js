@@ -15,7 +15,7 @@ if (typeof Object.create !== 'function') {
             colores: d3.scale.category10(),
             width: 850, //ancho de la grafica por defecto
             height: 500, // alto de la grafica de linea
-            margin: {top: 5, right: 50, bottom: 150, left: 80},
+            margin: {top: 5, right: 145, bottom: 150, left: 80},
 
             height2: 50, // alto de la grafica de barra
             margin2: {top: 35, realtop: 0, bottom: 0},
@@ -524,6 +524,10 @@ if (typeof Object.create !== 'function') {
                 var cant = parseInt(d3.select(this).attr('data-value'));
                 var tipo = d3.select(this).attr('data-class');
                 var fechaInicio = self._m_obtener_fechaInicio(tipo, cant);
+                if (fechaInicio == null) {
+                    console.error("no hay datos para el 1ro de enero del año actual");
+                    return;
+                }
                 var data = self._m_obtener_datos_de_intervalo(fechaInicio, null, self.datos[0].titulo);
                 if (data == null || data.length == 0)
                     return; //Aqui no tengo que dar el mensaje de error
@@ -678,7 +682,8 @@ if (typeof Object.create !== 'function') {
                     //Comprobar 1ro que esta fecha es valida dentro del intervalo
                     //analizar que hago si no esta en el intervalo
                     var pos = bisectDate(self.datos[0].data, fechaInicio);
-                    fechaInicio = self.datos[0].data[pos].date;
+                    //Esta condicion es para controlar cuando no hay datos para el ano actual
+                    fechaInicio = (pos == self.datos[0].data.length) ? null : self.datos[0].data[pos].date;
                     break;
             }
             return fechaInicio;
@@ -964,6 +969,7 @@ if (typeof Object.create !== 'function') {
                 var x0 = dominio[0];
                 var fechaInicio = dominio[0];
                 var ii = bisectDate(data, x0, 1);
+
                 var d0 = data[ii - 1];
                 var d1 = data[ii];
                 var startPos = 0;
@@ -978,9 +984,11 @@ if (typeof Object.create !== 'function') {
                 //obtener fecha final
                 x0 = dominio[1];
                 var fechaFin = dominio[1];
-                ii = bisectDate(data, x0, 1);
+                ii = bisectDate(data, x0);
                 d0 = data[ii - 1];
                 d1 = data[ii];
+                if (d1 == undefined && ii == data.length)
+                    d1 = d0;
                 var endPos = 1;
                 if (x0 - d0.date > d1.date - x0) {
                     endPos = ii;
@@ -1207,13 +1215,18 @@ if (typeof Object.create !== 'function') {
 
             function resize() {
 
-                var width = parseInt(d3.select("#chart-container>svg").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
+                var width = parseInt(d3.select("#chart-container").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
 
                 self.configuracion.width = width;
-                //console.info(parseInt(d3.select("#chart-container>svg").style("width")));
+                var width_chartcontainer = parseInt(d3.select("#chart-container").style("width"));
+                var width_leyenda = parseInt(chart_container.select(".leyenda").style("width"));
+
+                var svg_width = parseInt(d3.select("#chart-container>svg").style("width"));
+                //chart_container.select("svg").style("width", svg_width);
 
                 d3.select(".leyenda")
-                    .style("left", self.configuracion.width + self.configuracion.margin.left + "px");
+                    //.style("left", self.configuracion.width + self.configuracion.margin.left + "px");
+                    .style("left", width_chartcontainer - width_leyenda + "px");
 
                 // Cambiar ancho del mouse-move
                 chart_container.select(".mouse-move")
@@ -1419,6 +1432,7 @@ if (typeof Object.create !== 'function') {
             /* Posicionar el leyenda*/
             d3.select(".leyenda")
                 .style("left", self.configuracion.width + self.configuracion.margin.left + 5 + "px")
+                .style("left", "100%")
                 //.style("top", self.configuracion.margin.top - 20 + "px")
                 .style("display", "none");
 
@@ -1570,7 +1584,7 @@ if (typeof Object.create !== 'function') {
 
                 }).on("mouseout", function () {
                     focus.style("display", "none");
-                    //d3.select('#main_chart_svg .leyenda').style('display', 'none');
+                    d3.select('#main_chart_svg .leyenda').style('display', 'none');
                     d3.select('#main_chart_svg .current_date').style('display', 'none');
                     d3.select('#main_chart_svg .current_date_text').style('display', "none");
                 });
@@ -1702,6 +1716,8 @@ if (typeof Object.create !== 'function') {
                 d3.select("#low").text(dt.low);
                 d3.select("#close").text(dt.close);
                 d3.select("#volumen").text(formato_numero(dt.volume, 3, ".", ","));
+                var change = self.comparaciones["datos"][0][pos1].porciento;
+                d3.select("#change").text(change);
 
                 var barra = focus_barra.select('rect[data-pos="' + pos1 + '"]');
                 var tempColor = barra.style.fill;

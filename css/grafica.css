@@ -3,9 +3,11 @@
 }
 
 #main_chart_svg {
-    /*border: 1px solid green;*/
-    height: 100%;
+    /*border: 1px solid #a8aeb5;*/
+    max-width: 850px;
     width: 100%;
+    background-color: #F0F6FD;
+    padding: 5px 0 0 5px;
 }
 
 #main_chart_svg #chart-container {
@@ -14,6 +16,7 @@
     height: 100%;
     width: 100%;
     max-width: 850px;
+    /*border: 1px solid green;*/
 }
 
 #main_chart_svg .current_date_text {
@@ -193,5 +196,5 @@ path {
 }
 
 #chart_svg{
-    width: 100%;
+    max-width: 100%;
 }
