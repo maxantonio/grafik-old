@@ -1432,9 +1432,9 @@ if (typeof Object.create !== 'function') {
             /* Posicionar el leyenda*/
             d3.select(".leyenda")
                 .style("left", self.configuracion.width + self.configuracion.margin.left + 5 + "px")
-                .style("left", "100%")
+                .style("left", "100%");
                 //.style("top", self.configuracion.margin.top - 20 + "px")
-                .style("display", "none");
+                //.style("display", "none");
 
             tooltip = chart_container.append('div')
                 .style('position', 'absolute')
@@ -1455,7 +1455,7 @@ if (typeof Object.create !== 'function') {
                 .data(self.periodos)
                 .enter()
                 .append("button")
-                .attr("class", "m btn btn-primary btn-md")
+                .attr("class", "m btn btn-default btn-md")
                 .attr("type", "button")
                 .attr("data-value", function (p) {
                     return p.cantidad;
@@ -1575,16 +1575,12 @@ if (typeof Object.create !== 'function') {
                     //MOUSE OVER
                     focus.style("display", null); // muestro las lineas, discontinuas
 
-                    //Muestra la leyenda
-                    d3.select(".leyenda").style("display", null);
-
                     //muestra el rect que contiene la fecha actual
                     d3.select('.current_date').style('display', null);
                     d3.select('.current_date_text').style('display', null);
 
                 }).on("mouseout", function () {
                     focus.style("display", "none");
-                    d3.select('#main_chart_svg .leyenda').style('display', 'none');
                     d3.select('#main_chart_svg .current_date').style('display', 'none');
                     d3.select('#main_chart_svg .current_date_text').style('display', "none");
                 });
