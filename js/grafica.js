@@ -920,6 +920,7 @@ if (typeof Object.create !== 'function') {
                     chart_container.select('path[data_titulo="' + simbolo_base + '"]').remove();
                 }
                 var data = self._m_seleccionar_datos_a_graficar();
+                self._m_calcular_porciento1(data);
                 self._m_actualizar_grafica(data);
             });
         }
