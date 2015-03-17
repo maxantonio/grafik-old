@@ -1747,6 +1747,12 @@ if (typeof Object.create !== 'function') {
                     barra = focus_barra.select('rect[data-pos="' + temp + '"]');
                     barra.style("fill", tempColor).style('opacity', 1);
                 } else {
+
+                    tooltip.style('opacity', .9);
+                    tooltip.html('<span class="tooltip-text">' + 'Volume: <b>' + formato_numero(dt.volume, 3, ".", ",") + '</b></span>')
+                        .style('left', (x(dd.date) /*+x2.rangeBand()*/) + 'px')
+                        .style('top',(self.configuracion.margin2.realtop - 2) + 'px');
+
                     barra.style("fill", "#FFBB78").style('opacity', .5);
                 }
                 temp = pos1;
