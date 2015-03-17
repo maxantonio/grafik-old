@@ -1491,13 +1491,14 @@ if (typeof Object.create !== 'function') {
                 'Indicadores<span class="caret"></span></button><ul class="dropdown-menu">' + Li_indicadores + '</ul></div>';
 
             var btnReiniciar = '<div class="form-group"> <button id="btn_reiniciar" class="btn btn-default" type="button">Reiniciar</button></div>';
+            var btnReiniciar1 = '<div class="form-group"> <button id="btn_reiniciar1" class="chart-btn" type="button">TEST</button></div>';
             var input_fecha_inicio = '<div class="form-group"><input type="text" placeholder="Desde" name="inicio" id="chart_start" class="form-control"></div>';
             var input_fecha_fin = '<div class="form-group"><input type="text" placeholder="Hasta" name="fin" id="chart_end" class="form-control"></div>';
 
             var contenedor_fecha =
                 '<div class="parametros">' +
                 '<div class="todos">' +
-                input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar +
+                input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar+
                 '<div class="clearfix"></div>' +
                 '</div>' +
                 '</div>' +
