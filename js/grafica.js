@@ -519,7 +519,6 @@ if (typeof Object.create !== 'function') {
         },
 
         _m_evento_click_periodos: function () {
-            //Click en los botones
             d3.selectAll(".m").on("click", function () {
                 var cant = parseInt(d3.select(this).attr('data-value'));
                 var tipo = d3.select(this).attr('data-class');
@@ -545,6 +544,11 @@ if (typeof Object.create !== 'function') {
                         });
                         self._m_graficar_comparaciones();
                     }
+
+                    //desactivo todos los botones
+                    chart_container.selectAll(".chart-rangos>.m").classed("active",false);
+                    //Activo al que se le dio click
+                    d3.select(this).classed("active",true);
                 }
                 return false;
             });
@@ -961,6 +965,10 @@ if (typeof Object.create !== 'function') {
             brush.on("brushend", brush_end);
 
             function brush_end() {
+
+                //desactivo todos los botones
+                chart_container.selectAll(".chart-rangos>.m").classed("active",false);
+
                 x.domain(brush.empty() ? x_brush.domain() : brush.extent());
 
                 var dominio = x.domain();
@@ -1434,8 +1442,8 @@ if (typeof Object.create !== 'function') {
             d3.select(".leyenda")
                 .style("left", self.configuracion.width + self.configuracion.margin.left + 5 + "px")
                 .style("left", "100%");
-                //.style("top", self.configuracion.margin.top - 20 + "px")
-                //.style("display", "none");
+            //.style("top", self.configuracion.margin.top - 20 + "px")
+            //.style("display", "none");
 
             tooltip = chart_container.append('div')
                 .style('position', 'absolute')
@@ -1456,7 +1464,10 @@ if (typeof Object.create !== 'function') {
                 .data(self.periodos)
                 .enter()
                 .append("button")
-                .attr("class", "m btn btn-default btn-md")
+                .attr("class", function (p) {
+                    var clase = "m btn btn-default btn-md";
+                    return p.activo ? clase + " active" : clase
+                })
                 .attr("type", "button")
                 .attr("data-value", function (p) {
                     return p.cantidad;
@@ -1498,7 +1509,7 @@ if (typeof Object.create !== 'function') {
             var contenedor_fecha =
                 '<div class="parametros">' +
                 '<div class="todos">' +
-                input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar+
+                input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar +
                 '<div class="clearfix"></div>' +
                 '</div>' +
                 '</div>' +
@@ -1606,6 +1617,9 @@ if (typeof Object.create !== 'function') {
                     d0 = data[i - 1],
                     d1 = data[i];
 
+                if (d1 == undefined)
+                    return;
+
                 if (x0 - d0.date > d1.date - x0) {
                     d = d1;
                     change = self.comparaciones["datos"][0][i].porciento;
@@ -1678,8 +1692,11 @@ if (typeof Object.create !== 'function') {
                     var ii = bisectDate(dataComp, x0, 1);
                     var d0 = dataComp[ii - 1];
                     var d1 = dataComp[ii];
-                    var d = x0 - d0.date > d1.date - x0 ? d1 : d0;
 
+                    if (d1 == undefined)
+                        return;
+
+                    var d = x0 - d0.date > d1.date - x0 ? d1 : d0;
                     focus.select('circle[data_simbolo="' + self.comparaciones["simbolos"][pos] + '"]')
                         .attr("transform", "translate(" + x(d.date) + "," + y(+d.porciento) + ")")
                         .attr("r", 4);
@@ -1699,6 +1716,9 @@ if (typeof Object.create !== 'function') {
                 var d0 = data[ii - 1];
                 var d1 = data[ii];
                 var dt = null;
+
+                if (d1 == undefined)
+                    return;
 
                 if (x0 - d0.date > d1.date - x0) {
                     dt = d1;

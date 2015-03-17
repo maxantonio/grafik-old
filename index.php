@@ -77,8 +77,8 @@
     var datos;
 
     jQuery(document).ready(function () {
-//        Modo_Produccion(periodos);
-        Modo_Desarrollo(periodos);
+        Modo_Produccion(periodos);
+        //Modo_Desarrollo(periodos);
     });
 
     function generar_datos_aleatorios(cantidad_elementos) {
