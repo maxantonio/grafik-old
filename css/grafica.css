@@ -18,7 +18,6 @@
 #main_chart_svg #chart-container {
     position: relative;
     margin-top: 10px;
-    height: 100%;
     width: 100%;
     max-width: 850px;
     /*border: 1px solid green;*/
@@ -26,7 +25,6 @@
 
 #main_chart_svg .current_date_text {
     font-size: 12px;
-    font-weight: bold;
     text-anchor: middle;
 }
 
@@ -169,13 +167,14 @@ path {
 }
 
 #main_chart_svg .tooltip-info {
-    background: #000000;
     opacity: 0;
     padding: 5px 10px;
+    background: #000000;
 }
 
 .tooltip-text {
     color: #ffffff;
+    text-align: center;
 }
 
 /*CSS del brush*/

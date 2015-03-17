@@ -1173,7 +1173,7 @@ if (typeof Object.create !== 'function') {
                 .attr('y', -2 * current_date_height) // esto es para que por defecto no se vea en la grafica
                 .attr("rx", 0)         // set the x corner curve radius
                 .attr("ry", 0)        // set the y corner curve radius
-                .style('fill', self.datos[0].color);
+                .style('fill', "black");
 
             // Texto que se muestra dentro del cuadro que se mueve
             svg.append("text")
@@ -1442,10 +1442,8 @@ if (typeof Object.create !== 'function') {
             d3.select(".leyenda")
                 .style("left", self.configuracion.width + self.configuracion.margin.left + 5 + "px")
                 .style("left", "100%");
-            //.style("top", self.configuracion.margin.top - 20 + "px")
-            //.style("display", "none");
 
-            tooltip = chart_container.append('div')
+            tooltip = d3.select("#chart-container").append('div')
                 .style('position', 'absolute')
                 .attr('class', 'tooltip-info');
         }
@@ -1594,6 +1592,7 @@ if (typeof Object.create !== 'function') {
 
                 }).on("mouseout", function () {
                     focus.style("display", "none");
+                    tooltip.style('opacity', 0);
                     d3.select('#main_chart_svg .current_date').style('display', 'none');
                     d3.select('#main_chart_svg .current_date_text').style('display', "none");
                 });
@@ -1644,6 +1643,11 @@ if (typeof Object.create !== 'function') {
                     barra = focus_barra.select('rect[data-pos="' + temp + '"]');
                     barra.style("fill", tempColor).style('opacity', 1);
                 } else {
+                    tooltip.style('opacity', .9);
+                    tooltip.html('<span class="tooltip-text">' + 'Volume: <b>' + formato_numero(d.volume, 3, ".", ",") + '</b></span>')
+                        .style('left', (x(d.date) /*+x2.rangeBand()*/) + 'px')
+                        .style('top',(self.configuracion.margin2.realtop - 2) + 'px');
+
                     barra.style("fill", "#FFBB78").style('opacity', .5);
                 }
                 temp = pos;
