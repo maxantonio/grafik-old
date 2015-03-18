@@ -546,9 +546,9 @@ if (typeof Object.create !== 'function') {
                     }
 
                     //desactivo todos los botones
-                    chart_container.selectAll(".chart-rangos>.m").classed("active",false);
+                    chart_container.selectAll(".chart-rangos>.m").classed("active", false);
                     //Activo al que se le dio click
-                    d3.select(this).classed("active",true);
+                    d3.select(this).classed("active", true);
                 }
                 return false;
             });
@@ -967,7 +967,7 @@ if (typeof Object.create !== 'function') {
             function brush_end() {
 
                 //desactivo todos los botones
-                chart_container.selectAll(".chart-rangos>.m").classed("active",false);
+                chart_container.selectAll(".chart-rangos>.m").classed("active", false);
 
                 x.domain(brush.empty() ? x_brush.domain() : brush.extent());
 
@@ -1102,16 +1102,13 @@ if (typeof Object.create !== 'function') {
             y2_1.domain(y2.domain());
 
             // Grillas para el eje X
-            svg.append("g")
-                .attr("class", "grid x")
-                .attr("transform", "translate(0," + self.configuracion.height + ")")
+            svg.select(".grid.x")
                 .call(dibujar_eje_x(x)
                     .tickSize(-self.configuracion.height, 0, 0)
                     .tickFormat(""));
 
             // Grillas para el eje Y
-            svg.append("g")
-                .attr("class", "grid y")
+            svg.select(".grid.y")
                 .call(dibujar_eje_y(y)
                     .tickSize(-self.configuracion.width, 0, 0)
                     .tickFormat(""));
@@ -1234,8 +1231,8 @@ if (typeof Object.create !== 'function') {
                 //chart_container.select("svg").style("width", svg_width);
 
                 d3.select(".leyenda")
-                    //.style("left", self.configuracion.width + self.configuracion.margin.left + "px");
-                    .style("left", width_chartcontainer - width_leyenda + "px");
+                    .style("left", self.configuracion.width + self.configuracion.margin.left + "px");
+                    //.style("left", width_chartcontainer - width_leyenda + "px");
 
                 // Cambiar ancho del mouse-move
                 chart_container.select(".mouse-move")
@@ -1422,10 +1419,35 @@ if (typeof Object.create !== 'function') {
                 .attr("class", "g-main")
                 .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin.top + ")");
 
+            // Grillas para el eje X
+            svg.append("g")
+                .attr("class", "grid x")
+                .attr("transform", "translate(0," + self.configuracion.height + ")");
+
+            // Grillas para el eje Y
+            svg.append("g")
+                .attr("class", "grid y");
+
             //g para mostrar las lineas discontinuas cuando se mueve el mouse
             focus = svg.append("g")
                 .attr("class", "focus")
                 .style("display", "none");
+
+            text_top_container = chart_container.select("#chart-container").append("div")
+                .attr("class", "text_top_container");
+
+            var datosTop = [["open", "Open: 0"], ["hight", "Hight: 0"], ["low", "Low: 0"], ["close", "Close: 0"], ["volume", "Volume: 0"], ["change", "Change: 0"]];
+            text_top_container.selectAll("textos")
+                .data(datosTop)
+                .enter()
+                .append("span")
+                .attr("class", "text_top")
+                .attr("id", function (d) {
+                    return d[0];
+                })
+                .text(function (d) {
+                    return d[1];
+                });
 
             // TODO la 2 linea es para quitar la grafica de barras e ir probando el brush
             focus_barra = main_svg.append("g")
@@ -1440,8 +1462,8 @@ if (typeof Object.create !== 'function') {
 
             /* Posicionar el leyenda*/
             d3.select(".leyenda")
-                .style("left", self.configuracion.width + self.configuracion.margin.left + 5 + "px")
-                .style("left", "100%");
+                .style("left", self.configuracion.width + "px");
+                //.style("left", "100%");
 
             tooltip = d3.select("#chart-container").append('div')
                 .style('position', 'absolute')
@@ -1517,10 +1539,7 @@ if (typeof Object.create !== 'function') {
 
             //Crear leyenda
             function _crear_leyenda() {
-                return '<div class="leyenda"><div class="wrapper"><p>Open:&nbsp;<span id="open"></span></p>' +
-                    '<p>Hight:&nbsp;<span id="high">0</span></p><p>Low:&nbsp;<span id="low">0</span></p>' +
-                    '<p>Close:&nbsp;<span id="close">0</span></p><p>Volume:&nbsp;<span id="volumen">0</span></p>' +
-                    '<p>Change: <span id="change">0</span></p></div></div>';
+                return '<div class="leyenda"><div class="wrapper"></div></div>';
             }
         }
         ,
@@ -1630,12 +1649,12 @@ if (typeof Object.create !== 'function') {
                 }
 
                 //Actualizar Leyenda en elmouse move
-                chart_container.select("#open").text(d.open);
-                chart_container.select("#high").text(d.hight);
-                chart_container.select("#low").text(d.low);
-                chart_container.select("#close").text(d.close);
-                chart_container.select("#volumen").text(formato_numero(d.volume, 3, ".", ","));
-                chart_container.select("#change").text(change + "%");
+                text_top_container.select("#open").text("Open: " + d.open);
+                text_top_container.select("#high").text("Hight: " + d.hight);
+                text_top_container.select("#low").text("Low: " + d.low);
+                text_top_container.select("#close").text("Close: " + d.close);
+                text_top_container.select("#volume").text("Volume: " + formato_numero(d.volume, 3, ".", ","));
+                text_top_container.select("#change").text("Change: " + change + "%");
 
                 var barra = focus_barra.select('rect[data-pos="' + pos + '"]');
                 var tempColor = barra.style.fill;
@@ -1643,11 +1662,6 @@ if (typeof Object.create !== 'function') {
                     barra = focus_barra.select('rect[data-pos="' + temp + '"]');
                     barra.style("fill", tempColor).style('opacity', 1);
                 } else {
-                    tooltip.style('opacity', .9);
-                    tooltip.html('<span class="tooltip-text">' + 'Volume: <b>' + formato_numero(d.volume, 3, ".", ",") + '</b></span>')
-                        .style('left', (x(d.date) /*+x2.rangeBand()*/) + 'px')
-                        .style('top',(self.configuracion.margin2.realtop - 2) + 'px');
-
                     barra.style("fill", "#FFBB78").style('opacity', .5);
                 }
                 temp = pos;
@@ -1733,13 +1747,13 @@ if (typeof Object.create !== 'function') {
                 }
 
                 //Actualizar Leyenda en elmouse move
-                d3.select("#open").text(dt.open);
-                d3.select("#high").text(dt.close);
-                d3.select("#low").text(dt.low);
-                d3.select("#close").text(dt.close);
-                d3.select("#volumen").text(formato_numero(dt.volume, 3, ".", ","));
+                text_top_container.select("#open").text("Open: " + dt.open);
+                text_top_container.select("#high").text("Hight: " + dt.close);
+                text_top_container.select("#low").text("Low: " + dt.low);
+                text_top_container.select("#close").text("Close: " + dt.close);
+                text_top_container.select("#volume").text("Volume: " + formato_numero(dt.volume, 3, ".", ","));
                 var change = self.comparaciones["datos"][0][pos1].porciento;
-                d3.select("#change").text(change);
+                text_top_container.select("#change").text("Change: " + change + "%");
 
                 var barra = focus_barra.select('rect[data-pos="' + pos1 + '"]');
                 var tempColor = barra.style.fill;
@@ -1747,12 +1761,6 @@ if (typeof Object.create !== 'function') {
                     barra = focus_barra.select('rect[data-pos="' + temp + '"]');
                     barra.style("fill", tempColor).style('opacity', 1);
                 } else {
-
-                    tooltip.style('opacity', .9);
-                    tooltip.html('<span class="tooltip-text">' + 'Volume: <b>' + formato_numero(dt.volume, 3, ".", ",") + '</b></span>')
-                        .style('left', (x(dd.date) /*+x2.rangeBand()*/) + 'px')
-                        .style('top',(self.configuracion.margin2.realtop - 2) + 'px');
-
                     barra.style("fill", "#FFBB78").style('opacity', .5);
                 }
                 temp = pos1;

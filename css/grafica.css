@@ -15,6 +15,20 @@
     padding: 5px 0 0 5px;
 }
 
+.text_top_container{
+    background: #ffffff;
+    height: 20px;
+    left: 100px;
+    position: absolute;
+    top: 5px;
+    width: 71%;
+}
+
+.text_top{
+    margin-right: 5px;
+    border-bottom: 1px solid;
+}
+
 #main_chart_svg #chart-container {
     position: relative;
     margin-top: 10px;
@@ -90,10 +104,10 @@ path {
     position: absolute;
     border-radius: 4px;
     border-left: 1px solid #a3a3a3;
-    border-right: 0;
+    border-right: 1px solid #a3a3a3;
     border-bottom: 1px solid #a3a3a3;
     border-top: 1px solid #a3a3a3;
-    width: 140px;
+    width: 105px;
 }
 
 #main_chart_svg .hidden {
