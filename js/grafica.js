@@ -440,6 +440,11 @@ if (typeof Object.create !== 'function') {
             } else
                 add = (max - min) / (parseInt(yAxis.ticks()[0]) + 1);
 
+            //Nota: Si el min y el max son iguales, entonces el sumo la mitad a ambos
+            if (add == 0) {
+                add = min / 2;
+            }
+
             y.domain([min - add, max + add]);
 
 
@@ -588,6 +593,8 @@ if (typeof Object.create !== 'function') {
                         //Si no ha encontrado el valor de posEnd
                         if (posEnd == -1)
                             posEnd = formatFecha(d.date) == formatFecha(fechaFin) ? i : -1;
+
+
                     }
 
                     /**Cuando termina este ciclo si todavia no ha encontrado la posicion entoences
@@ -827,8 +834,6 @@ if (typeof Object.create !== 'function') {
                 .attr("transform", "translate(" + (self.configuracion.width) + ",0)")
                 .call(yAxis2);
 
-            console.info(self.configuracion.width);
-
             //Elimina todos los rect que haya en la grafica de barras
             barras.selectAll("rect").remove();
 
@@ -850,17 +855,18 @@ if (typeof Object.create !== 'function') {
                 .attr("height", 0);
 
             bars.on('mouseover', function (d) {
-                tooltip.transition().style('opacity', .9);
+                tooltip.style('opacity', .9);
                 tooltip.html('<span class="tooltip-text">' + formatDate(d.date) + '<br/>Volume: <b>' + formato_numero(d.volume, 3, ".", ",") + '</b></span>')
-                    .style('left', (d3.event.pageX ) + 'px')
-                    .style('top', (d3.event.pageY - 50) + 'px');
+                    .style('left', (d3.event.pageX + 10 ) + 'px')
+                    //.style('top', (d3.event.pageY ) + 'px');
+                    .style('top', (self.configuracion.margin2.realtop) + 'px');
 
                 tempColor = this.style.fill;
                 d3.select(this)
                     .transition()
                     .style('opacity', .5);
             }).on("mouseout", function (d) {
-                tooltip.transition().style('opacity', 0);
+                tooltip.style('opacity', 0).style("left", -self.configuracion.width + "px");
                 d3.select(this).transition().style('opacity', 1).style('fill', tempColor);
             });
 
@@ -1085,6 +1091,11 @@ if (typeof Object.create !== 'function') {
                 add = (max - min) / (parseInt(yAxis.ticks()[0]) + 1);
             }
 
+            //Nota: Si el min y el max son iguales, entonces el sumo la mitad a ambos
+            if (add == 0) {
+                add = min / 2;
+            }
+
             y.domain([min - add, max + add]);
 
             x_brush.domain(d3.extent(self.datos[0].data, function (d) {
@@ -1286,6 +1297,10 @@ if (typeof Object.create !== 'function') {
                         .tickSize(-self.configuracion.width, 0, 0)
                         .tickFormat("")
                 );
+
+                //Actualizando el eje y cuando re redimensiona la pantalla
+                svg.select(".y.axis")
+                    .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
                 //--------------------------------------------------
 
                 //Actualizando grafica de barras
@@ -1293,6 +1308,10 @@ if (typeof Object.create !== 'function') {
 
                 //linea del eje x
                 focus_barra.select('.line-bottom').attr("x2", width);
+
+                //Actualizando el eje y cuando se redimenciona la pantalla
+                focus_barra.select(".y.axis")
+                    .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
 
                 focus_barra.selectAll(".bar")
                     .attr("x", function (d) {
@@ -1303,8 +1322,8 @@ if (typeof Object.create !== 'function') {
 
                 //Actualizando brush
                 x_brush.range([0, width]);
-                xAxis_brush.ticks(Math.max((width / 50) - 10, 2));
-                //xAxis_brush.ticks(5);
+                //xAxis_brush.ticks(Math.max((width / 50) - 10, 2));
+                xAxis_brush.ticks(5);
 
                 //Actualizando grafica de area
                 g_brush.select(".area")
@@ -1670,6 +1689,9 @@ if (typeof Object.create !== 'function') {
                     tooltip.style('opacity', 0);
                     d3.select('#main_chart_svg .current_date').style('display', 'none');
                     d3.select('#main_chart_svg .current_date_text').style('display', "none");
+
+                    //quitando el foco de la barra activa, cuando sale el mouse de la grafica de linea
+                    barras.selectAll("rect").style("fill", "steelblue").style("opacity", 1);
                 });
             return rec_mouse_move;
         }
