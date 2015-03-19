@@ -1258,8 +1258,7 @@ if (typeof Object.create !== 'function') {
                 .html(ultimo_valor.close);
 
             main_close_value_temp
-                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px");
-
+                .style("left", -1*(self.configuracion.width + self.configuracion.margin.left) + "px");
         }
         ,
 
@@ -1552,9 +1551,6 @@ if (typeof Object.create !== 'function') {
                 .attr('class', 'tooltip-info');
 
             tip_current_date = d3.select("#chart-container").append('div')
-                .style('position', 'absolute')
-                .style('background', 'black')
-                .style('width', 'auto')
                 .attr('class', 'tip_current_date');
 
             main_close_value = d3.select("#chart-container").append('div')
@@ -1562,6 +1558,8 @@ if (typeof Object.create !== 'function') {
                 .style('background', self.datos[0].color);
 
             main_close_value_temp = d3.select("#chart-container").append('div')
+                .attr('display', 'none')
+                .style("left","-100px")
                 .attr('class', 'main_close_value_temp');
         }
         ,
@@ -1703,12 +1701,14 @@ if (typeof Object.create !== 'function') {
                     //muestra el rect que contiene la fecha actual
                     d3.select('.current_date').style('display', null);
                     d3.select('.current_date_text').style('display', null);
+                    main_close_value_temp.style("display",null);
 
                 }).on("mouseout", function () {
                     focus.style("display", "none");
                     tooltip.style('opacity', 0);
                     d3.select('#main_chart_svg .current_date').style('display', 'none');
                     d3.select('#main_chart_svg .current_date_text').style('display', "none");
+                    main_close_value_temp.style("display","none");
 
                     //quitando el foco de la barra activa, cuando sale el mouse de la grafica de linea
                     barras.selectAll("rect").style("fill", "steelblue").style("opacity", 1);
@@ -1792,6 +1792,7 @@ if (typeof Object.create !== 'function') {
 
                 main_close_value_temp
                     .style("top", y(d.close) + "px")
+                    .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
                     .html(d.close);
 
                 d3.select('.current_date_text')

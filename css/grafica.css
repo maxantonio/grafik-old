@@ -195,6 +195,9 @@ path {
 .tip_current_date{
     padding: 5px 8px;
     color: #ffffff;
+    position: absolute;
+    background: #000000;
+    display: none;
 }
 
 .main_close_value{
