@@ -18,7 +18,7 @@
 </head>
 <body>
 <div id="container">
-    <div id="grafica"></div>
+    <div id="grafica" style="max-width: 900px; margin-left: 50px"></div>
 </div>
 
 <script type="text/javascript">

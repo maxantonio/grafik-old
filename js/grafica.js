@@ -523,6 +523,12 @@ if (typeof Object.create !== 'function') {
             //Mouse move por DATOS
             var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
             self._m_mouse_move_datos(rectangulo, data);
+
+            var ultimo_valor = data[data.length - 1];
+            main_close_value
+                .style("top", y(ultimo_valor.close) + "px")
+                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                .html(ultimo_valor.close);
         },
 
         _m_evento_click_periodos: function () {
@@ -860,7 +866,6 @@ if (typeof Object.create !== 'function') {
                 tooltip.style('opacity', .9);
                 tooltip.html('<span class="tooltip-text">' + formatDate(d.date) + '<br/>Volume: <b>' + formato_numero(d.volume, 3, ".", ",") + '</b></span>')
                     .style('left', (d3.event.pageX + 10 ) + 'px')
-                    //.style('top', (d3.event.pageY ) + 'px');
                     .style('top', (self.configuracion.margin2.realtop) + 'px');
 
                 tempColor = this.style.fill;
@@ -1246,6 +1251,15 @@ if (typeof Object.create !== 'function') {
             text_top_container.select("#volume").text("V: " + formato_numero(d.volume, 3, ".", ","));
             text_top_container.select("#change").text("Ch: " + obj.porciento + "%");
 
+            var ultimo_valor = data[data.length - 1];
+            main_close_value
+                .style("top", y(ultimo_valor.close) + "px")
+                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                .html(ultimo_valor.close);
+
+            main_close_value_temp
+                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px");
+
         }
         ,
 
@@ -1484,7 +1498,7 @@ if (typeof Object.create !== 'function') {
             //    .attr("class", "titulo_top")
             //    .text(self.configuracion.titulo);
 
-            var datosTop = [["titulo", "MAXCOM"], ["open", "Open: 0"], ["hight", "Hight: 0"], ["low", "Low: 0"], ["close", "Close: 0"], ["volume", "Volume: 0"], ["change", "Change: 0"]];
+            var datosTop = [["titulo", self.configuracion.titulo], ["open", "Open: 0"], ["hight", "Hight: 0"], ["low", "Low: 0"], ["close", "Close: 0"], ["volume", "Volume: 0"], ["change", "Change: 0"]];
             text_top_container.selectAll("textos")
                 .data(datosTop)
                 .enter()
@@ -1540,11 +1554,15 @@ if (typeof Object.create !== 'function') {
             tip_current_date = d3.select("#chart-container").append('div')
                 .style('position', 'absolute')
                 .style('background', 'black')
-                .style('display', 'none')
-                .style('width', '150px')
-                .style('height', '20px')
+                .style('width', 'auto')
                 .attr('class', 'tip_current_date');
 
+            main_close_value = d3.select("#chart-container").append('div')
+                .attr('class', 'main_close_value')
+                .style('background', self.datos[0].color);
+
+            main_close_value_temp = d3.select("#chart-container").append('div')
+                .attr('class', 'main_close_value_temp');
         }
         ,
 
@@ -1766,6 +1784,15 @@ if (typeof Object.create !== 'function') {
                 d3.select('.current_date')
                     .attr("x", x(d.date) - current_date_width / 2)
                     .attr("y", self.configuracion.height);
+
+                //d3.select(".tip_current_date")
+                //    .style("left", x(d.date) + "px")
+                //    .style("top", self.configuracion.height + self.configuracion.margin.top + "px")
+                //    .html(formatDate(d.date));
+
+                main_close_value_temp
+                    .style("top", y(d.close) + "px")
+                    .html(d.close);
 
                 d3.select('.current_date_text')
                     .attr("x", x(d.date))

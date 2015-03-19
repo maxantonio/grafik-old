@@ -192,6 +192,26 @@ path {
     text-align: center;
 }
 
+.tip_current_date{
+    padding: 5px 8px;
+    color: #ffffff;
+}
+
+.main_close_value{
+    color: #ffffff;
+    padding: 2px 10px 2px 10px;
+    background: #000000;
+    position: absolute;
+}
+
+.main_close_value_temp{
+    color: #ffffff;
+    padding: 2px 10px 2px 10px;
+    background: #000000;
+    position: absolute;
+}
+
+
 /*CSS del brush*/
 
 .brush .extent {
