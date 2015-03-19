@@ -15,14 +15,14 @@ if (typeof Object.create !== 'function') {
             colores: d3.scale.category10(),
             width: 850, //ancho de la grafica por defecto
             height: 500, // alto de la grafica de linea
-            margin: {top: 5, right: 145, bottom: 150, left: 80},
+            margin: {top: 5, right: 145, bottom: 150, left: 52},
 
             height2: 50, // alto de la grafica de barra
             margin2: {top: 35, realtop: 0, bottom: 0},
 
             margin3: {top: 60, realtop: 0, bottom: 0},
             height3: 40, // alto del brush
-            titulo: "Acciones"
+            titulo: "MAXCOM"
         },
         datos: [], // cada uno tiene un objeto con titulo, datos, color
         comparaciones: [], //aqui van las comparaciones que se realizan entre acciones de empresas
@@ -795,9 +795,8 @@ if (typeof Object.create !== 'function') {
                 }
                 return true;
             }
-        }
+        },
 
-        ,
         /** Este metodo, devuelve un arreglo con los datos del periodo que selecciono el usuario. Ver periodos.*/
         _m_seleccionar_datos_a_graficar: function () {
             /** Entre todos los periodos, debe haber siempre 1 activo*/
@@ -825,13 +824,16 @@ if (typeof Object.create !== 'function') {
             focus_barra.select('.y.axis').remove();
             focus_barra.append("g")
                 .attr("class", "y axis")
+                .attr("transform", "translate(" + (self.configuracion.width) + ",0)")
                 .call(yAxis2);
 
-            //Elimina todos los rect que haya en la grafica
-            focus_barra.selectAll("rect").remove();
+            console.info(self.configuracion.width);
+
+            //Elimina todos los rect que haya en la grafica de barras
+            barras.selectAll("rect").remove();
 
             //agregando las barras a la grafica
-            var bars = focus_barra.selectAll("bar")
+            var bars = barras.selectAll("bar")
                 .data(data)
                 .enter()
                 .append("rect")
@@ -876,18 +878,18 @@ if (typeof Object.create !== 'function') {
                 .ease('elastic');
 
             //En caso de que este la borro y la creo nuevamente
-            focus_barra.select('.x.axis').remove();
+            //focus_barra.select('.x.axis').remove();
 
             //Linea final de la grafica
-            focus_barra.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + self.configuracion.height2 + ")")
-                .append("line")
-                .attr("class", "line-bottom")
-                .attr("x1", "0")
-                .attr("x2", self.configuracion.width)
-                .style("stroke", "black")
-                .style("opacity", "1");
+            //focus_barra.append("g")
+            //    .attr("class", "x axis")
+            //    .attr("transform", "translate(0," + self.configuracion.height2 + ")")
+            //    .append("line")
+            //    .attr("class", "line-bottom")
+            //    .attr("x1", "0")
+            //    .attr("x2", self.configuracion.width)
+            //    .style("stroke", "black")
+            //    .style("opacity", "1");
         }
         ,
 
@@ -1044,6 +1046,7 @@ if (typeof Object.create !== 'function') {
                 return;
             }
 
+
             //Datos que se van a graficar
             var data = self._m_seleccionar_datos_a_graficar();
 
@@ -1122,7 +1125,16 @@ if (typeof Object.create !== 'function') {
             //  Adiciona el Eje Y
             svg.append("g")
                 .attr("class", "y axis")
+                .attr("transform", "translate(" + (self.configuracion.width) + ",0)")
                 .call(yAxis);
+
+            svg.append("g")
+                .attr("class", "liena-1 axis")
+                .append("line")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("y1", 0)
+                .attr("y2", self.configuracion.height);
 
             // Add the valueline path.
             svg.append("path")
@@ -1210,6 +1222,17 @@ if (typeof Object.create !== 'function') {
             var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
             self._m_mouse_move_datos(rectangulo, data);
             self._m_resize(); //Inicializa el evento window resize para la grafica
+
+            var d = self.datos[0].data[self.datos[0].data.length - 1];
+            var obj = self.comparaciones["datos"][0][self.comparaciones["datos"][0].length - 1];
+
+            text_top_container.select("#open").text("O: " + d.open);
+            text_top_container.select("#hight").text("H: " + d.hight);
+            text_top_container.select("#low").text("L: " + d.low);
+            text_top_container.select("#close").text("C: " + d.close);
+            text_top_container.select("#volume").text("V: " + formato_numero(d.volume, 3, ".", ","));
+            text_top_container.select("#change").text("Ch: " + obj.porciento + "%");
+
         }
         ,
 
@@ -1231,8 +1254,8 @@ if (typeof Object.create !== 'function') {
                 //chart_container.select("svg").style("width", svg_width);
 
                 d3.select(".leyenda")
-                    .style("left", self.configuracion.width + self.configuracion.margin.left + "px");
-                    //.style("left", width_chartcontainer - width_leyenda + "px");
+                    .style("left", (self.configuracion.width + self.configuracion.margin.left + 40) + "px");
+                //.style("left", width_chartcontainer - width_leyenda + "px");
 
                 // Cambiar ancho del mouse-move
                 chart_container.select(".mouse-move")
@@ -1280,7 +1303,8 @@ if (typeof Object.create !== 'function') {
 
                 //Actualizando brush
                 x_brush.range([0, width]);
-                xAxis_brush.ticks(Math.max((width / 50) - 2, 2));
+                xAxis_brush.ticks(Math.max((width / 50) - 10, 2));
+                //xAxis_brush.ticks(5);
 
                 //Actualizando grafica de area
                 g_brush.select(".area")
@@ -1358,11 +1382,11 @@ if (typeof Object.create !== 'function') {
 
             // Eje X y Eje y
             xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5);
-            yAxis = d3.svg.axis().scale(y).orient("left").ticks(5);
+            yAxis = d3.svg.axis().scale(y).orient("right").ticks(5);
 
             //Ejes para la grafica de barra
             //xAxis2 = d3.svg.axis().scale(x2).orient("bottom").tickFormat(d3.time.format("%d"));
-            yAxis2 = d3.svg.axis().scale(y2_1).orient("left").ticks(3);
+            yAxis2 = d3.svg.axis().scale(y2_1).orient("right").ticks(3);
 
             // Define que valores va a graficar la linea para cada eje
             valueline = d3.svg.line()
@@ -1377,7 +1401,7 @@ if (typeof Object.create !== 'function') {
             x_brush = d3.time.scale().range([0, self.configuracion.width]);
             y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
 
-            xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom");
+            xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom").ticks(5);
 
             brush = d3.svg.brush().x(x_brush);
 
@@ -1394,7 +1418,6 @@ if (typeof Object.create !== 'function') {
         ,
 
         _m_iniciar_elementos_dom: function () {
-
             chart_container = d3.select(self.configuracion.id).append("div");
             chart_container.attr("id", "main_chart_svg").attr("class", "main_chart_svg");
 
@@ -1436,7 +1459,11 @@ if (typeof Object.create !== 'function') {
             text_top_container = chart_container.select("#chart-container").append("div")
                 .attr("class", "text_top_container");
 
-            var datosTop = [["open", "Open: 0"], ["hight", "Hight: 0"], ["low", "Low: 0"], ["close", "Close: 0"], ["volume", "Volume: 0"], ["change", "Change: 0"]];
+            //text_top_container.append("div")
+            //    .attr("class", "titulo_top")
+            //    .text(self.configuracion.titulo);
+
+            var datosTop = [["titulo", "MAXCOM"], ["open", "Open: 0"], ["hight", "Hight: 0"], ["low", "Low: 0"], ["close", "Close: 0"], ["volume", "Volume: 0"], ["change", "Change: 0"]];
             text_top_container.selectAll("textos")
                 .data(datosTop)
                 .enter()
@@ -1455,6 +1482,27 @@ if (typeof Object.create !== 'function') {
                 .attr("class", "focus_barra")
                 .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
 
+            barras = focus_barra.append("g")
+                .attr("class", "rect_barras");
+
+            focus_barra.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
+
+            focus_barra.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + self.configuracion.height2 + ")")
+                .append("line")
+                .attr("class", "line-bottom")
+                .attr("x1", "0")
+                .attr("x2", self.configuracion.width)
+                .style("stroke", "black")
+                .style("opacity", "1");
+
+            //Estableciendo el ancho de la grafica
+            var width = parseInt(d3.select("#chart-container").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
+            self.configuracion.width = width;
+
             //g contenedor del brush
             g_brush = main_svg.append("g")
                 .attr("class", "g_brush")
@@ -1463,11 +1511,19 @@ if (typeof Object.create !== 'function') {
             /* Posicionar el leyenda*/
             d3.select(".leyenda")
                 .style("left", self.configuracion.width + "px");
-                //.style("left", "100%");
 
             tooltip = d3.select("#chart-container").append('div')
                 .style('position', 'absolute')
                 .attr('class', 'tooltip-info');
+
+            tip_current_date = d3.select("#chart-container").append('div')
+                .style('position', 'absolute')
+                .style('background', 'black')
+                .style('display', 'none')
+                .style('width', '150px')
+                .style('height', '20px')
+                .attr('class', 'tip_current_date');
+
         }
         ,
 
@@ -1649,12 +1705,12 @@ if (typeof Object.create !== 'function') {
                 }
 
                 //Actualizar Leyenda en elmouse move
-                text_top_container.select("#open").text("Open: " + d.open);
-                text_top_container.select("#high").text("Hight: " + d.hight);
-                text_top_container.select("#low").text("Low: " + d.low);
-                text_top_container.select("#close").text("Close: " + d.close);
-                text_top_container.select("#volume").text("Volume: " + formato_numero(d.volume, 3, ".", ","));
-                text_top_container.select("#change").text("Change: " + change + "%");
+                text_top_container.select("#open").text("O: " + d.open);
+                text_top_container.select("#hight").text("H: " + d.hight);
+                text_top_container.select("#low").text("L: " + d.low);
+                text_top_container.select("#close").text("C: " + d.close);
+                text_top_container.select("#volume").text("V: " + formato_numero(d.volume, 3, ".", ","));
+                text_top_container.select("#change").text("Ch: " + change + "%");
 
                 var barra = focus_barra.select('rect[data-pos="' + pos + '"]');
                 var tempColor = barra.style.fill;
@@ -1746,14 +1802,14 @@ if (typeof Object.create !== 'function') {
                     pos1 = ii - 1;
                 }
 
-                //Actualizar Leyenda en elmouse move
-                text_top_container.select("#open").text("Open: " + dt.open);
-                text_top_container.select("#high").text("Hight: " + dt.close);
-                text_top_container.select("#low").text("Low: " + dt.low);
-                text_top_container.select("#close").text("Close: " + dt.close);
-                text_top_container.select("#volume").text("Volume: " + formato_numero(dt.volume, 3, ".", ","));
+                //Actualizar Leyenda en el mouse move
+                text_top_container.select("#open").text("O: " + dt.open);
+                text_top_container.select("#hight").text("H: " + dt.hight);
+                text_top_container.select("#low").text("L: " + dt.low);
+                text_top_container.select("#close").text("C: " + dt.close);
+                text_top_container.select("#volume").text("V: " + formato_numero(dt.volume, 3, ".", ","));
                 var change = self.comparaciones["datos"][0][pos1].porciento;
-                text_top_container.select("#change").text("Change: " + change + "%");
+                text_top_container.select("#change").text("Ch: " + change + "%");
 
                 var barra = focus_barra.select('rect[data-pos="' + pos1 + '"]');
                 var tempColor = barra.style.fill;
