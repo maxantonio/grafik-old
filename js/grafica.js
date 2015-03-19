@@ -119,6 +119,8 @@ if (typeof Object.create !== 'function') {
                 add = (maxValue_porciento - minValue_porciento) / (parseInt(yAxis.ticks()[0]) + 1);
             }
 
+            if (add == 0)
+                add = min + 1;
             //Actualizo el dominio del eje x
             x.domain(d3.extent(self.comparaciones["datos"][0], function (d) {
                 return d.date;
@@ -442,7 +444,7 @@ if (typeof Object.create !== 'function') {
 
             //Nota: Si el min y el max son iguales, entonces el sumo la mitad a ambos
             if (add == 0) {
-                add = min / 2;
+                add = min + 1;
             }
 
             y.domain([min - add, max + add]);
@@ -1093,7 +1095,7 @@ if (typeof Object.create !== 'function') {
 
             //Nota: Si el min y el max son iguales, entonces el sumo la mitad a ambos
             if (add == 0) {
-                add = min / 2;
+                add = min + 1;
             }
 
             y.domain([min - add, max + add]);
