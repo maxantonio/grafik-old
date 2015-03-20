@@ -16,13 +16,16 @@
 }
 
 .text_top_container{
-    background: #ffffff;
     height: 20px;
     left: 100px;
     position: absolute;
     top: 5px;
     width: 71%;
     padding: 5px;
+}
+
+.text_top_container > span{
+    background: #ffffff;
 }
 
 .text_top{

@@ -14,14 +14,14 @@ if (typeof Object.create !== 'function') {
             id: "#chart", // id del elemento contenedor de la grafica, Debe estar creado previamente en el html de la pagina
             colores: d3.scale.category10(),
             width: 850, //ancho de la grafica por defecto
-            height: 500, // alto de la grafica de linea
+            height: 560, // alto de la grafica de linea
             margin: {top: 5, right: 80, bottom: 150, left: 52},
 
             height2: 50, // alto de la grafica de barra
-            margin2: {top: 35, realtop: 0, bottom: 0},
+            margin2: {top: 45, realtop: 0, bottom: 0},
 
-            margin3: {top: 60, realtop: 0, bottom: 0},
-            height3: 40, // alto del brush
+            margin3: {top: 1, realtop: 0, bottom: 0},
+            height3: 1, // alto del brush
             titulo: "MAXCOM"
         },
         datos: [], // cada uno tiene un objeto con titulo, datos, color
@@ -101,7 +101,6 @@ if (typeof Object.create !== 'function') {
                 return;
             }
 
-
             //Datos que se van a graficar
             var data = self._m_seleccionar_datos_a_graficar();
 
@@ -147,12 +146,12 @@ if (typeof Object.create !== 'function') {
 
             y.domain([min - add, max + add]);
 
-            x_brush.domain(d3.extent(self.datos[0].data, function (d) {
-                return d.date;
-            }));
-            y_brush.domain(d3.extent(self.datos[0].data, function (d) {
-                return d.close;
-            }));
+            //x_brush.domain(d3.extent(self.datos[0].data, function (d) {
+            //    return d.date;
+            //}));
+            //y_brush.domain(d3.extent(self.datos[0].data, function (d) {
+            //    return d.close;
+            //}));
 
             //Dominio para la grafica de barra
             x2.domain(data.map(function (d) {
@@ -254,28 +253,28 @@ if (typeof Object.create !== 'function') {
                 .style("fill", "#ffffff") // color blanco el texto
                 .text(this.datos[0].titulo);
 
-            // Agregandole los datos al brush
-            g_brush.append("path")
-                .datum(self.datos[0].data)
-                .attr("class", "area")
-                .style("fill", self.datos[0].color)
-                .attr("d", area);
+            //// Agregandole los datos al brush
+            //g_brush.append("path")
+            //    .datum(self.datos[0].data)
+            //    .attr("class", "area")
+            //    .style("fill", self.datos[0].color)
+            //    .attr("d", area);
 
-            //Eje x del brush
-            g_brush.append("g")
-                .attr("class", "x_brush axis_brush")
-                .attr("transform", "translate(0," + self.configuracion.height3 + ")")
-                .call(xAxis_brush);
-
-            //Asignandole a el brush el rango activo
-            brush.extent(x.domain());
-
-            g_brush.append("g")
-                .attr("class", "brush")
-                .call(brush)
-                .selectAll("rect")
-                .attr("y", -6)
-                .attr("height", self.configuracion.height3 + 7);
+            ////Eje x del brush
+            //g_brush.append("g")
+            //    .attr("class", "x_brush axis_brush")
+            //    .attr("transform", "translate(0," + self.configuracion.height3 + ")")
+            //    .call(xAxis_brush);
+            //
+            ////Asignandole a el brush el rango activo
+            //brush.extent(x.domain());
+            //
+            //g_brush.append("g")
+            //    .attr("class", "brush")
+            //    .call(brush)
+            //    .selectAll("rect")
+            //    .attr("y", -6)
+            //    .attr("height", self.configuracion.height3 + 7);
 
             // Agregando un rectangulo para capturar el mouse
             //Este rectangulo tiene las mismas dimeciones que la grafica
@@ -346,8 +345,8 @@ if (typeof Object.create !== 'function') {
 
             y2_1.domain(y2.domain());
 
-            // Actualizando rango del brush
-            brush.extent(x.domain());
+            //// Actualizando rango del brush
+            //brush.extent(x.domain());
 
             //Esto es porque para las comparaciones le habia puesto un porciento
             yAxis.tickFormat(function (tickValue) {
@@ -396,10 +395,8 @@ if (typeof Object.create !== 'function') {
             main_svg.select(".y.axis")
                 .call(yAxis);
 
-            //Actualizo el brush
-            //main_svg.select(".brush").transition().duration(animation_time).call(brush);
-            //d3.select("g.brush").transition().duration(animation_time).call(brush);
-            chart_container.select(".brush").transition().call(brush);
+            ////Actualizo el brush
+            //chart_container.select(".brush").transition().call(brush);
 
 
             //Actualiza la grafic ade barras
@@ -475,9 +472,7 @@ if (typeof Object.create !== 'function') {
                     return d[1];
                 });
 
-            // TODO la 2 linea es para quitar la grafica de barras e ir probando el brush
             focus_barra = main_svg.append("g")
-                //.style("display", "none") //temporal para probar la otra grafica dgfuentes
                 .attr("class", "focus_barra")
                 .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
 
@@ -502,10 +497,10 @@ if (typeof Object.create !== 'function') {
             var width = parseInt(d3.select("#chart-container").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
             self.configuracion.width = width;
 
-            //g contenedor del brush
-            g_brush = main_svg.append("g")
-                .attr("class", "g_brush")
-                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin3.realtop + ")");
+            ////g contenedor del brush
+            //g_brush = main_svg.append("g")
+            //    .attr("class", "g_brush")
+            //    .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin3.realtop + ")");
 
             tooltip = d3.select("#chart-container").append('div')
                 .style('position', 'absolute')
@@ -662,23 +657,23 @@ if (typeof Object.create !== 'function') {
                     return y(d.close);
                 });
 
-            //Datos para la grafica del brush
-            x_brush = d3.time.scale().range([0, self.configuracion.width]);
-            y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
-
-            xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom").ticks(5);
-
-            brush = d3.svg.brush().x(x_brush);
-
-            area = d3.svg.area()
-                .interpolate("monotone")
-                .x(function (d) {
-                    return x_brush(d.date);
-                })
-                .y0(self.configuracion.height3)
-                .y1(function (d) {
-                    return y_brush(d.close);
-                });
+            ////Datos para la grafica del brush
+            //x_brush = d3.time.scale().range([0, self.configuracion.width]);
+            //y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
+            //
+            //xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom").ticks(5);
+            //
+            //brush = d3.svg.brush().x(x_brush);
+            //
+            //area = d3.svg.area()
+            //    .interpolate("monotone")
+            //    .x(function (d) {
+            //        return x_brush(d.date);
+            //    })
+            //    .y0(self.configuracion.height3)
+            //    .y1(function (d) {
+            //        return y_brush(d.close);
+            //    });
         }
         ,
 
@@ -751,22 +746,22 @@ if (typeof Object.create !== 'function') {
                     .attr("width", x2.rangeBand());
                 //--------------------------------------------------
 
-                //Actualizando brush
-                x_brush.range([0, width]);
-                //xAxis_brush.ticks(Math.max((width / 50) - 10, 2));
-                xAxis_brush.ticks(5);
-
-                //Actualizando grafica de area
-                g_brush.select(".area")
-                    .attr("d", area);
-
-                //Actualizando eje x del brush
-                g_brush.select(".x_brush")
-                    .call(xAxis_brush);
-
-                brush.x(x_brush);
-                g_brush.select(".brush")
-                    .call(brush);
+                ////Actualizando brush
+                //x_brush.range([0, width]);
+                ////xAxis_brush.ticks(Math.max((width / 50) - 10, 2));
+                //xAxis_brush.ticks(5);
+                //
+                ////Actualizando grafica de area
+                //g_brush.select(".area")
+                //    .attr("d", area);
+                //
+                ////Actualizando eje x del brush
+                //g_brush.select(".x_brush")
+                //    .call(xAxis_brush);
+                //
+                //brush.x(x_brush);
+                //g_brush.select(".brush")
+                //    .call(brush);
 
                 //----------------------------------------------------
 
@@ -852,14 +847,6 @@ if (typeof Object.create !== 'function') {
                             .html(data[data.length - 1].porciento + "%");
                     }
                 }
-
-                //var ultimo_comp = data[data.length - 1];
-                //Posicionando el ultimo valor de porciento del periodo que se esta graficando
-                //chart_container.select(".indicator_" + self.comparaciones["simbolos"][i])
-                //    .style("background", self.comparaciones["colores"][i])
-                //    .style("top", y(+ultimo_comp.porciento) - 3 + "px")
-                //    .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
-                //    .html(ultimo_comp.porciento + "%");
             });
 
             yAxis.tickFormat(function (tickValue) {
@@ -953,9 +940,9 @@ if (typeof Object.create !== 'function') {
 
             y2_1.domain(y2.domain());
 
-            // Actualizando rango del brush
-            brush.extent(x.domain());
-            chart_container.select(".brush").transition().call(brush);
+            //// Actualizando rango del brush
+            //brush.extent(x.domain());
+            //chart_container.select(".brush").transition().call(brush);
 
             focus_barra.select(".y.axis")
                 .call(yAxis2);
@@ -1305,7 +1292,7 @@ if (typeof Object.create !== 'function') {
                 }
 
                 if (parseInt(self.configuracion.width) <= 0 || parseInt(self.configuracion.height) <= 0 ||
-                    parseInt(self.configuracion.height2) <= 0 || parseInt(self.configuracion.height3) <= 0
+                    parseInt(self.configuracion.height2) <= 0 || parseInt(self.configuracion.height3) < 0
                 ) {
                     console.error("Error en configuracion de height o width");
                     return false;
@@ -1552,69 +1539,69 @@ if (typeof Object.create !== 'function') {
 
         _m_evento_brush: function () {
 
-            brush.on("brushend", brush_end);
+            //brush.on("brushend", brush_end);
 
-            function brush_end() {
-
-                //desactivo todos los botones
-                chart_container.selectAll(".chart-rangos>.m").classed("active", false);
-
-                x.domain(brush.empty() ? x_brush.domain() : brush.extent());
-
-                var dominio = x.domain();
-                var data = self.datos[0].data;
-
-                //obtener fecha inicial
-                var x0 = dominio[0];
-                var fechaInicio = dominio[0];
-                var ii = bisectDate(data, x0, 1);
-
-                var d0 = data[ii - 1];
-                var d1 = data[ii];
-                var startPos = 0;
-                if (x0 - d0.date > d1.date - x0) {
-                    startPos = ii;
-                    fechaInicio = d1.date;
-                } else {
-                    startPos = ii - 1;
-                    fechaInicio = d0.date;
-                }
-
-                //obtener fecha final
-                x0 = dominio[1];
-                var fechaFin = dominio[1];
-                ii = bisectDate(data, x0);
-                d0 = data[ii - 1];
-                d1 = data[ii];
-                if (d1 == undefined && ii == data.length)
-                    d1 = d0;
-                var endPos = 1;
-                if (x0 - d0.date > d1.date - x0) {
-                    endPos = ii;
-                    fechaFin = d1.date;
-                } else {
-                    endPos = ii - 1;
-                    fechaFin = d0.date;
-                }
-
-                // El +1 es para que tome los datos hasta la posicion
-                data = data.slice(startPos, endPos + 1);
-                if (data.length > 0) {
-                    jQuery("#chart_start").val(formatFecha(fechaInicio));
-                    jQuery("#chart_end").val(formatFecha(fechaFin));
-                    if (!self.comparando) {
-                        self._m_calcular_porciento1(data);
-                        self._m_actualizar_grafica(data);
-                    }
-                    else {
-                        self.comparaciones["simbolos"].forEach(function (simbolo, i) {
-                            self._m_calcular_porciento(fechaInicio, fechaFin, i, simbolo);
-                        });
-                        self._m_graficar_comparaciones();
-                    }
-                }
-                return false;
-            }
+            //function brush_end() {
+            //
+            //    //desactivo todos los botones
+            //    chart_container.selectAll(".chart-rangos>.m").classed("active", false);
+            //
+            //    x.domain(brush.empty() ? x_brush.domain() : brush.extent());
+            //
+            //    var dominio = x.domain();
+            //    var data = self.datos[0].data;
+            //
+            //    //obtener fecha inicial
+            //    var x0 = dominio[0];
+            //    var fechaInicio = dominio[0];
+            //    var ii = bisectDate(data, x0, 1);
+            //
+            //    var d0 = data[ii - 1];
+            //    var d1 = data[ii];
+            //    var startPos = 0;
+            //    if (x0 - d0.date > d1.date - x0) {
+            //        startPos = ii;
+            //        fechaInicio = d1.date;
+            //    } else {
+            //        startPos = ii - 1;
+            //        fechaInicio = d0.date;
+            //    }
+            //
+            //    //obtener fecha final
+            //    x0 = dominio[1];
+            //    var fechaFin = dominio[1];
+            //    ii = bisectDate(data, x0);
+            //    d0 = data[ii - 1];
+            //    d1 = data[ii];
+            //    if (d1 == undefined && ii == data.length)
+            //        d1 = d0;
+            //    var endPos = 1;
+            //    if (x0 - d0.date > d1.date - x0) {
+            //        endPos = ii;
+            //        fechaFin = d1.date;
+            //    } else {
+            //        endPos = ii - 1;
+            //        fechaFin = d0.date;
+            //    }
+            //
+            //    // El +1 es para que tome los datos hasta la posicion
+            //    data = data.slice(startPos, endPos + 1);
+            //    if (data.length > 0) {
+            //        jQuery("#chart_start").val(formatFecha(fechaInicio));
+            //        jQuery("#chart_end").val(formatFecha(fechaFin));
+            //        if (!self.comparando) {
+            //            self._m_calcular_porciento1(data);
+            //            self._m_actualizar_grafica(data);
+            //        }
+            //        else {
+            //            self.comparaciones["simbolos"].forEach(function (simbolo, i) {
+            //                self._m_calcular_porciento(fechaInicio, fechaFin, i, simbolo);
+            //            });
+            //            self._m_graficar_comparaciones();
+            //        }
+            //    }
+            //    return false;
+            //}
         }
         ,
 
@@ -1917,7 +1904,7 @@ if (typeof Object.create !== 'function') {
     }
 
     function dibujar_eje_y(y_main, ticks) {
-        ticks || ( ticks = 5 ); //asigna valor por defecto en caso de que no se pase ningun parametro
+        ticks || ( ticks = 10 ); //asigna valor por defecto en caso de que no se pase ningun parametro
         return d3.svg.axis().scale(y_main).orient("left").ticks(ticks);
     }
 
