@@ -35,7 +35,7 @@
             texto: "5D",
             cantidad: 5,
             tipo: "dia",
-            activo: true
+            activo: false
         }, {
             texto: "10D",
             cantidad: 10,
@@ -65,7 +65,7 @@
             texto: "1Y",
             cantidad: 1,
             tipo: "anno",
-            activo: false
+            activo: true
         },
         {
             texto: "2Y",
@@ -77,8 +77,8 @@
     var datos;
 
     jQuery(document).ready(function () {
-//        Modo_Produccion(periodos);
-        Modo_Desarrollo(periodos);
+        Modo_Produccion(periodos);
+//        Modo_Desarrollo(periodos);
 //        Modo_Test(periodos);
     });
 
