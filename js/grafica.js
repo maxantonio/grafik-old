@@ -15,7 +15,7 @@ if (typeof Object.create !== 'function') {
             colores: d3.scale.category10(),
             width: 850, //ancho de la grafica por defecto
             height: 500, // alto de la grafica de linea
-            margin: {top: 5, right: 145, bottom: 150, left: 52},
+            margin: {top: 5, right: 80, bottom: 150, left: 52},
 
             height2: 50, // alto de la grafica de barra
             margin2: {top: 35, realtop: 0, bottom: 0},
@@ -87,7 +87,7 @@ if (typeof Object.create !== 'function') {
         _m_graficar_comparaciones: function () {
             var maxValue_porciento = 0, minValue_porciento = 0;
 
-            var wrapper = d3.select(".leyenda>.wrapper");
+
             //Dominio para el eje Y
             self.comparaciones["datos"].forEach(function (data, i) {
                 var tempMaxValue = d3.max(data, function (d) {
@@ -100,13 +100,6 @@ if (typeof Object.create !== 'function') {
                     return +d.porciento;
                 });
                 minValue_porciento = minValue_porciento > tempMinValue ? tempMinValue : minValue_porciento;
-
-                //Agregando leyenda para cada uno de los simbolos
-                var sel = wrapper.select('span[data_simbolo="' + self.comparaciones["simbolos"][i] + '"]');
-                if (sel.empty()) {
-                    var p = wrapper.append("p");
-                    p.append("span").attr("data_simbolo", self.comparaciones["simbolos"][i]);
-                }
             });
 
             //valor adicional para sumarle a los ejes
@@ -127,6 +120,35 @@ if (typeof Object.create !== 'function') {
             }));
 
             y.domain([minValue_porciento - add, maxValue_porciento + add]);
+
+            self.comparaciones["datos"].forEach(function (data, i) {
+                //Creando los indicadores para todos los simbolos excepto el default
+                if (i > 0) {// por eso es esta condicion
+                    var current_indicator = chart_container.select('.indicator_' + self.comparaciones["simbolos"][i]);
+
+                    if(current_indicator.empty()){
+                        d3.select("#chart-container").append('div')
+                            .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                            .style("top", y(data[data.length - 1].porciento) - 3 + "px")
+                            .style("background", self.comparaciones["colores"][i])
+                            .attr('class', 'indicator comp indicator_' + self.comparaciones["simbolos"][i])
+                            .html(data[data.length - 1].porciento + "%");
+                    }else{
+                        current_indicator
+                            .style("top", y(data[data.length - 1].porciento) - 3 + "px")
+                            .html(data[data.length - 1].porciento + "%");
+                    }
+
+                }
+
+                //var ultimo_comp = data[data.length - 1];
+                //Posicionando el ultimo valor de porciento del periodo que se esta graficando
+                //chart_container.select(".indicator_" + self.comparaciones["simbolos"][i])
+                //    .style("background", self.comparaciones["colores"][i])
+                //    .style("top", y(+ultimo_comp.porciento) - 3 + "px")
+                //    .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                //    .html(ultimo_comp.porciento + "%");
+            });
 
             yAxis.tickFormat(function (tickValue) {
                 if (tickValue == "0")
@@ -178,9 +200,6 @@ if (typeof Object.create !== 'function') {
             //oculto la linea que estaba dibujada, la principal
             main_svg.select(".line-main").classed("hidden", true);
 
-            //construct an ordinal scale with 10 categorical colors.
-            var color = d3.scale.category10();
-
             var g_main = main_svg.select(".g-main");
 
             self.comparaciones["datos"].forEach(function (data, i) {
@@ -201,6 +220,14 @@ if (typeof Object.create !== 'function') {
                         .style("fill", self.comparaciones['colores'][i]) //color de relleno del circulo
                         .attr("r", 4);
                 }
+
+                // Agregar un indicador por cada simbolo diferente del default
+
+                if (i > 0) { //no tengo que analizar el default porque
+                    //ya tengo su indicador dibujado
+
+                }
+
             });
 
             //Actualizo el eje X
@@ -228,60 +255,17 @@ if (typeof Object.create !== 'function') {
             //Actualizar grafica de barras
             self._m_graficar_barras(data);
 
-            //// Seleccionar los elementos, y los enlazo con los datos
-            //var bars = focus_barra.selectAll("rect")
-            //    .data(data, function (d) {
-            //        return d.volume;
-            //    });
-            //
-            //// Aplico los nuevos datos
-            //bars.enter()
-            //    .append("rect")
-            //    .attr("fill", "steelblue")
-            //    .attr("class", "bar")
-            //    .attr("x", function (d) {
-            //        return x2(d.date);
-            //    })
-            //    .attr("y", function (d) {
-            //        return y2(d.volume);
-            //    })
-            //    .attr("width", x2.rangeBand())
-            //    .attr("height", function (d) {
-            //        return self.configuracion.height2 - y2(d.volume);
-            //    });
-            //
-            //bars.exit().remove();
-            //
-            //// Inica la actualizacion de los datos
-            //bars
-            //    .transition()
-            //    .duration(animation_time)
-            //    .attr("x", function (d) {
-            //        return x2(d.date);
-            //    })
-            //    .attr("y", function (d) {
-            //        return y2(d.volume);
-            //    })
-            //    .attr("width", x2.rangeBand())
-            //    .attr("height", function (d) {
-            //        return self.configuracion.height2 - y2(d.volume);
-            //    });
-
-            //Lo elimino y lo dibujo nuevamente
-            //focus_barra.select(".x.axis").remove();
-            //focus_barra.append("g")
-            //    .attr("class", "x axis")
-            //    .attr("transform", "translate(0," + self.configuracion.height2 + ")")
-            //    .append("line")
-            //    .attr("class", "line-bottom")
-            //    .attr("x1", "0")
-            //    .attr("x2", self.configuracion.width)
-            //    .style("stroke", "black")
-            //    .style("opacity", "1");
-
             //MOUSE MOVE COMPARACIONES
             var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
             self._m_mouse_move_comparaciones(rectangulo, data);
+
+
+            var ultimo_valor = self.comparaciones["datos"][0][self.comparaciones["datos"][0].length - 1];
+            main_indicator_value
+                .style("top", y(ultimo_valor.porciento) - 3 + "px")
+                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                .html(ultimo_valor.porciento + "%");
+
         },
         /** Calcula los datos de las comparaciones para la empresa que se le pase por parametro */
         _m_calcular_porciento: function (fechaInicio, fechaFin, pos, simbolo) {
@@ -356,9 +340,6 @@ if (typeof Object.create !== 'function') {
                     chart_container.select('path.line-porciento[data_titulo="' + simbolo + '"]').remove();
                     d3.selectAll('circle[data_simbolo="' + simbolo + '"]').remove();
 
-                    //Eliminarlo tambien de la leyenda
-                    chart_container.selectAll('span[data_simbolo="' + simbolo + '"]').remove();
-
                     //Elimino los datos para esa linea del arreglo de comparaciones
                     pos = self.comparaciones["simbolos"].indexOf(simbolo);
                     if (pos > -1) {
@@ -376,9 +357,6 @@ if (typeof Object.create !== 'function') {
 
                         // Elimino el circulo
                         focus.select('circle[data_simbolo="' + simbolo_base + '"]').remove();
-
-                        // Eliminarle el span de la leyenda
-                        chart_container.select('span[data_simbolo="' + simbolo_base + '"]').remove();
 
                         // Eliminar la linea de porciento
                         chart_container.select('path[data_titulo="' + simbolo_base + '"]').remove();
@@ -525,8 +503,8 @@ if (typeof Object.create !== 'function') {
             self._m_mouse_move_datos(rectangulo, data);
 
             var ultimo_valor = data[data.length - 1];
-            main_close_value
-                .style("top", y(ultimo_valor.close) + "px")
+            main_indicator_value
+                .style("top", y(ultimo_valor.close) - 3 + "px")
                 .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
                 .html(ultimo_valor.close);
         },
@@ -1252,13 +1230,13 @@ if (typeof Object.create !== 'function') {
             text_top_container.select("#change").text("Ch: " + obj.porciento + "%");
 
             var ultimo_valor = data[data.length - 1];
-            main_close_value
-                .style("top", y(ultimo_valor.close) + "px")
+            main_indicator_value
+                .style("top", y(ultimo_valor.close) - 3 + "px")
                 .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
                 .html(ultimo_valor.close);
 
-            main_close_value_temp
-                .style("left", -1*(self.configuracion.width + self.configuracion.margin.left) + "px");
+            main_indicator_default
+                .style("left", -1 * (self.configuracion.width + self.configuracion.margin.left) + "px");
         }
         ,
 
@@ -1278,10 +1256,6 @@ if (typeof Object.create !== 'function') {
 
                 var svg_width = parseInt(d3.select("#chart-container>svg").style("width"));
                 //chart_container.select("svg").style("width", svg_width);
-
-                d3.select(".leyenda")
-                    .style("left", (self.configuracion.width + self.configuracion.margin.left + 40) + "px");
-                //.style("left", width_chartcontainer - width_leyenda + "px");
 
                 // Cambiar ancho del mouse-move
                 chart_container.select(".mouse-move")
@@ -1542,10 +1516,6 @@ if (typeof Object.create !== 'function') {
                 .attr("class", "g_brush")
                 .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin3.realtop + ")");
 
-            /* Posicionar el leyenda*/
-            d3.select(".leyenda")
-                .style("left", self.configuracion.width + "px");
-
             tooltip = d3.select("#chart-container").append('div')
                 .style('position', 'absolute')
                 .attr('class', 'tooltip-info');
@@ -1553,14 +1523,13 @@ if (typeof Object.create !== 'function') {
             tip_current_date = d3.select("#chart-container").append('div')
                 .attr('class', 'tip_current_date');
 
-            main_close_value = d3.select("#chart-container").append('div')
-                .attr('class', 'main_close_value')
+            main_indicator_value = d3.select("#chart-container").append('div')
+                .attr('class', 'indicator main_indicator_value')
                 .style('background', self.datos[0].color);
 
-            main_close_value_temp = d3.select("#chart-container").append('div')
-                .attr('display', 'none')
-                .style("left","-100px")
-                .attr('class', 'main_close_value_temp');
+            main_indicator_default = d3.select("#chart-container").append('div')
+                .style("left", "-100px")
+                .attr('class', 'indicator main_indicator_default');
         }
         ,
 
@@ -1701,14 +1670,14 @@ if (typeof Object.create !== 'function') {
                     //muestra el rect que contiene la fecha actual
                     d3.select('.current_date').style('display', null);
                     d3.select('.current_date_text').style('display', null);
-                    main_close_value_temp.style("display",null);
+                    main_indicator_default.style("display", null);
 
                 }).on("mouseout", function () {
                     focus.style("display", "none");
                     tooltip.style('opacity', 0);
                     d3.select('#main_chart_svg .current_date').style('display', 'none');
                     d3.select('#main_chart_svg .current_date_text').style('display', "none");
-                    main_close_value_temp.style("display","none");
+                    main_indicator_default.style("display", "none");
 
                     //quitando el foco de la barra activa, cuando sale el mouse de la grafica de linea
                     barras.selectAll("rect").style("fill", "steelblue").style("opacity", 1);
@@ -1790,8 +1759,8 @@ if (typeof Object.create !== 'function') {
                 //    .style("top", self.configuracion.height + self.configuracion.margin.top + "px")
                 //    .html(formatDate(d.date));
 
-                main_close_value_temp
-                    .style("top", y(d.close) + "px")
+                main_indicator_default
+                    .style("top", y(d.close) - 3 + "px")
                     .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
                     .html(d.close);
 
@@ -1810,7 +1779,7 @@ if (typeof Object.create !== 'function') {
             var dd = null, pos1 = -1, temp = -1;
 
             function mouse_move_comparaciones() {
-                var leyenda = d3.select(".leyenda > .wrapper");
+
                 focus = main_svg.select(".focus");
                 var x0 = x.invert(d3.mouse(this)[0]);
 
@@ -1827,15 +1796,14 @@ if (typeof Object.create !== 'function') {
                         .attr("transform", "translate(" + x(d.date) + "," + y(+d.porciento) + ")")
                         .attr("r", 4);
 
+                    if (pos == 0) { //Indicador para la empresa por default
+                        main_indicator_default
+                            .style("top", y(+d.porciento) - 3 + "px")
+                            .html(d.porciento + "%");
+                    }
+
                     if (self.comparaciones["simbolos"][pos] == self.datos[0].titulo)
                         dd = d;
-
-                    var span = leyenda.select('span[data_simbolo="' + self.comparaciones["simbolos"][pos] + '"]');
-                    span.style("color", self.comparaciones["colores"][pos]);
-                    span.attr("data_simbolo", self.comparaciones["simbolos"][pos]);
-                    span.attr("class", "chart-leyenda");
-                    span.html(self.comparaciones["simbolos"][pos] + "<b> <br>Change: " + d.porciento + "%</b>" +
-                    "<br><b> Close: " + d.close + "</b>");
                 });
 
                 var ii = bisectDate(data, x0, 1);

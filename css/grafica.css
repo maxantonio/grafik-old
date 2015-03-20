@@ -93,6 +93,7 @@ path {
     margin: auto;
     /*max-width: 900px;*/
     margin-top: 10px;
+    border: 1px solid grey;
 }
 
 #main_chart_svg #chart {
@@ -100,7 +101,7 @@ path {
 }
 
 /*Leyenda*/
-#main_chart_svg .leyenda {
+#main_chart_svg .leyenda1 {
     padding: 5px;
     position: absolute;
     border-radius: 4px;
@@ -200,20 +201,19 @@ path {
     display: none;
 }
 
-.main_close_value{
+.indicator{
+    background: #000000;
     color: #ffffff;
     padding: 2px 10px 2px 10px;
-    background: #000000;
     position: absolute;
 }
-
-.main_close_value_temp{
-    color: #ffffff;
+.main_indicator_value{
     padding: 2px 10px 2px 10px;
-    background: #000000;
-    position: absolute;
 }
 
+.main_indicator_default{
+    padding: 2px 10px 2px 10px;
+}
 
 /*CSS del brush*/
 
