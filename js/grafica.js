@@ -84,318 +84,225 @@ if (typeof Object.create !== 'function') {
             return this;
         },
 
-        _m_graficar_comparaciones: function () {
-            var maxValue_porciento = 0, minValue_porciento = 0;
+        /**Metodo principal*/
+        m_graficar: function () {
+            self = this;
+            if (!this._m_datos_correctos()) {
+                console.error("m_graficar -> Configuracion de datos incorrectos");
+                return;
+            }
+            self._m_iniciar_elementos_dom();
+            self._m_btn_comparar(); //Inicializa los eventos click en el DropDown de comparar
+            self._m_evento_click_periodos();
+            self._m_evento_click_reiniciar();
+            self._m_evento_brush();
+            if (!self._m_preparar_Datos()) {
+                console.error("m_graficar -> Configuracion de datos incorrectos");
+                return;
+            }
 
 
-            //Dominio para el eje Y
-            self.comparaciones["datos"].forEach(function (data, i) {
-                var tempMaxValue = d3.max(data, function (d) {
-                    return +d.porciento;
-                });
+            //Datos que se van a graficar
+            var data = self._m_seleccionar_datos_a_graficar();
 
-                maxValue_porciento = maxValue_porciento < tempMaxValue ? tempMaxValue : maxValue_porciento;
+            if (data == null || data.length == 0 || self.datos.length == 0) {
+                console.error("m_raficar -> No hay datos para este intervalo");
+                return;
+            } else { //Datos correctos
+                var fechaInicio = data[0].date;
+                var fechaFin = data[data.length - 1].date;
+                jQuery("#chart_start").val(formatFecha(fechaInicio));
+                jQuery("#chart_end").val(formatFecha(fechaFin));
 
-                var tempMinValue = d3.min(data, function (d) {
-                    return +d.porciento;
-                });
-                minValue_porciento = minValue_porciento > tempMinValue ? tempMinValue : minValue_porciento;
+                //Aqui solo hay que calcular el porciento y no hay que dibujarlo
+                self._m_calcular_porciento(fechaInicio, fechaFin, 0, self.datos[0].titulo);
+            }
+
+            //establece el dominio para el eje x (es decir, de donde a donde van los valores)
+            x.domain(d3.extent(data, function (d) {
+                return d.date;
+            }));
+
+            var min = d3.min(data, function (d) {
+                return d.close;
             });
 
-            //valor adicional para sumarle a los ejes
+            var max = d3.max(data, function (d) {
+                return d.close;
+            });
+
             var add = 0;
             var tempTiksArray = y.ticks();
             if (tempTiksArray > 2) {
                 //toma la diferencia entre 2 ticks para adicionar a la grafica uno mas
                 add = tempTiksArray[1] - tempTiksArray[0];
             } else {
-                add = (maxValue_porciento - minValue_porciento) / (parseInt(yAxis.ticks()[0]) + 1);
+                add = (max - min) / (parseInt(yAxis.ticks()[0]) + 1);
             }
 
-            if (add == 0)
+            //Nota: Si el min y el max son iguales, entonces el sumo la mitad a ambos
+            if (add == 0) {
                 add = min + 1;
-            //Actualizo el dominio del eje x
-            x.domain(d3.extent(self.comparaciones["datos"][0], function (d) {
+            }
+
+            y.domain([min - add, max + add]);
+
+            x_brush.domain(d3.extent(self.datos[0].data, function (d) {
                 return d.date;
             }));
-
-            y.domain([minValue_porciento - add, maxValue_porciento + add]);
-
-            self.comparaciones["datos"].forEach(function (data, i) {
-                //Creando los indicadores para todos los simbolos excepto el default
-                if (i > 0) {// por eso es esta condicion
-                    var current_indicator = chart_container.select('.indicator_' + self.comparaciones["simbolos"][i]);
-
-                    if(current_indicator.empty()){
-                        d3.select("#chart-container").append('div')
-                            .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
-                            .style("top", y(data[data.length - 1].porciento) - 3 + "px")
-                            .style("background", self.comparaciones["colores"][i])
-                            .attr('class', 'indicator comp indicator_' + self.comparaciones["simbolos"][i])
-                            .html(data[data.length - 1].porciento + "%");
-                    }else{
-                        current_indicator
-                            .style("top", y(data[data.length - 1].porciento) - 3 + "px")
-                            .html(data[data.length - 1].porciento + "%");
-                    }
-
-                }
-
-                //var ultimo_comp = data[data.length - 1];
-                //Posicionando el ultimo valor de porciento del periodo que se esta graficando
-                //chart_container.select(".indicator_" + self.comparaciones["simbolos"][i])
-                //    .style("background", self.comparaciones["colores"][i])
-                //    .style("top", y(+ultimo_comp.porciento) - 3 + "px")
-                //    .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
-                //    .html(ultimo_comp.porciento + "%");
-            });
-
-            yAxis.tickFormat(function (tickValue) {
-                if (tickValue == "0")
-                    return tickValue + "%";
-                else if (parseFloat(tickValue.toFixed(2)) == '-0')
-                    return "0%";
-                else
-                    return tickValue.toFixed(2) + "%";
-            });
+            y_brush.domain(d3.extent(self.datos[0].data, function (d) {
+                return d.close;
+            }));
 
             //Dominio para la grafica de barra
-            x2.domain(self.comparaciones["datos"][0].map(function (d) {
+            x2.domain(data.map(function (d) {
                 return d.date;
             }));
-
-            //Borrar las lineas que estaban, actualmente, pero luego las voy a ocultar simplemente
-            svg.selectAll("path.line-porciento").remove();
-
-            //Oculto el circulo de la grafica principal
-            focus.select('circle.y').classed("hidden", true);
-
-            // Selecciono el elemento donde voy a comenzar la transicion
-            main_svg = d3.select("#chart-container>svg");
-            //.transition()
-            //.duration(animation_time);
-
-            //Repinta las lineas de la grilla para el eje X
-            main_svg.select("g.grid.x")
-                .call(dibujar_eje_x(x)
-                    .tickSize(-self.configuracion.height, 0, 0)
-                    .tickFormat("")
-            );
-
-            //Repinta las lineas de la grilla para el eje Y
-            main_svg.select("g.grid.y")
-                .call(dibujar_eje_y(y)
-                    .tickSize(-self.configuracion.width, 0, 0)
-                    .tickFormat("")
-            );
-
-            linea_porciento = d3.svg.line()
-                .x(function (d) {
-                    return x(d.date);
-                })
-                .y(function (d) {
-                    return y(d.porciento);
-                });
-
-            //oculto la linea que estaba dibujada, la principal
-            main_svg.select(".line-main").classed("hidden", true);
-
-            var g_main = main_svg.select(".g-main");
-
-            self.comparaciones["datos"].forEach(function (data, i) {
-                //agregando las lineas
-                g_main.append("path")
-                    .datum(data)
-                    .attr("class", "line line-porciento")
-                    .attr("data_titulo", self.comparaciones['simbolos'][i])
-                    .attr("stroke", self.comparaciones['colores'][i])
-                    .attr("d", linea_porciento);
-
-                //agregando el punto que se va a mover por cada linea, cuando se mueva el mouse
-                var circulo = focus.select('circle[data_simbolo="' + self.comparaciones['simbolos'][i] + '"]');
-                if (circulo.empty()) {
-                    focus.append("circle")
-                        .attr("class", "circle-porciento")
-                        .attr("data_simbolo", self.comparaciones['simbolos'][i])
-                        .style("fill", self.comparaciones['colores'][i]) //color de relleno del circulo
-                        .attr("r", 4);
-                }
-
-                // Agregar un indicador por cada simbolo diferente del default
-
-                if (i > 0) { //no tengo que analizar el default porque
-                    //ya tengo su indicador dibujado
-
-                }
-
-            });
-
-            //Actualizo el eje X
-            svg.select(".x.axis")
-                .call(xAxis);
-
-            //Actualizo el eje Y
-            svg.select(".y.axis")
-                .call(yAxis);
-
-            var total = self.comparaciones["datos"][0].length - 1;
-            var fechaInicio = self.comparaciones["datos"][0][0].date;
-            var fechaFin = self.comparaciones["datos"][0][total].date;
-            var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
 
             y2.domain([0, d3.max(data, function (d) {
                 return d.volume;
             })]);
-
             y2_1.domain(y2.domain());
 
-            focus_barra.select(".y.axis")
-                .call(yAxis2);
+            // Grillas para el eje X
+            svg.select(".grid.x")
+                .call(dibujar_eje_x(x)
+                    .tickSize(-self.configuracion.height, 0, 0)
+                    .tickFormat(""));
 
-            //Actualizar grafica de barras
+            // Grillas para el eje Y
+            svg.select(".grid.y")
+                .call(dibujar_eje_y(y)
+                    .tickSize(-self.configuracion.width, 0, 0)
+                    .tickFormat(""));
+
+            //  Adiciona el eje X
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + self.configuracion.height + ")")
+                .call(xAxis);
+
+            //  Adiciona el Eje Y
+            svg.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + (self.configuracion.width) + ",0)")
+                .call(yAxis);
+
+            svg.append("g")
+                .attr("class", "liena-1 axis")
+                .append("line")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("y1", 0)
+                .attr("y2", self.configuracion.height);
+
+            // Add the valueline path.
+            svg.append("path")
+                .datum(data)
+                .attr("clip-path", "url(#clip)")
+                .attr("class", "line line-main")
+                .attr("stroke", self.datos[0].color)
+                .attr("d", valueline);
+
+            // Adiciona linea discontinua vertical, que se va a mostrar cuando se mueva el mouse
+            focus.append("line")
+                .attr("class", "x linea-vertical hidden") // la pone oculta inicialmente
+                .style("stroke", "#23649E")
+                .style("stroke", "black")
+                .style("stroke-dasharray", "3,3") // Pone discontinua la linea
+                .attr("y1", 0)
+                .attr("y2", 0);
+
+            // Adiciona linea discontinua horizontal, que se va a mostrar cuando se mueva el mouse
+            focus.append("line")
+                .attr("class", "y hidden linea-horizontal") // La oculta inicialmente
+                .style("stroke", "black")
+                .style("stroke-dasharray", "3,3")
+                .attr("x1", self.configuracion.width)
+                .attr("x2", self.configuracion.width);
+
+            //Creando Circulo para posicionar en la interseccion
+            var valor = -2 * self.configuracion.margin.left; //esto es para que el circulo por defecto no se vea en la grafica
+            focus.append("circle")
+                .attr("class", "y")
+                .attr("transform", "translate(" + valor + ",0)")
+                .style("fill", self.datos[0].color) //color de relleno del circulo
+                .attr("r", 4);
+
+            //dibuja la grafica de barras
             self._m_graficar_barras(data);
 
-            //MOUSE MOVE COMPARACIONES
+            /* Creando rectangulo que indica la fecha actual cuando se mueve el mouse  mouse*/
+            var rect = svg.append("rect")
+                .style("display", "none")
+                .attr("class", "current_date")
+                .attr('width', current_date_width)
+                .attr('height', current_date_height)
+                .attr('x', 0)
+                .attr('y', -2 * current_date_height) // esto es para que por defecto no se vea en la grafica
+                .attr("rx", 0)         // set the x corner curve radius
+                .attr("ry", 0)        // set the y corner curve radius
+                .style('fill', "black");
+
+            // Texto que se muestra dentro del cuadro que se mueve
+            svg.append("text")
+                .style('display', "none")
+                //.attr("text-anchor", "middle")
+                .attr('class', "current_date_text")
+                .attr("x", 0)
+                .attr('y', -2 * current_date_height)
+                .style("fill", "#ffffff") // color blanco el texto
+                .text(this.datos[0].titulo);
+
+            // Agregandole los datos al brush
+            g_brush.append("path")
+                .datum(self.datos[0].data)
+                .attr("class", "area")
+                .style("fill", self.datos[0].color)
+                .attr("d", area);
+
+            //Eje x del brush
+            g_brush.append("g")
+                .attr("class", "x_brush axis_brush")
+                .attr("transform", "translate(0," + self.configuracion.height3 + ")")
+                .call(xAxis_brush);
+
+            //Asignandole a el brush el rango activo
+            brush.extent(x.domain());
+
+            g_brush.append("g")
+                .attr("class", "brush")
+                .call(brush)
+                .selectAll("rect")
+                .attr("y", -6)
+                .attr("height", self.configuracion.height3 + 7);
+
+            // Agregando un rectangulo para capturar el mouse
+            //Este rectangulo tiene las mismas dimeciones que la grafica
             var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
-            self._m_mouse_move_comparaciones(rectangulo, data);
+            self._m_mouse_move_datos(rectangulo, data);
+            self._m_resize(); //Inicializa el evento window resize para la grafica
 
+            var d = self.datos[0].data[self.datos[0].data.length - 1];
+            var obj = self.comparaciones["datos"][0][self.comparaciones["datos"][0].length - 1];
 
-            var ultimo_valor = self.comparaciones["datos"][0][self.comparaciones["datos"][0].length - 1];
+            text_top_container.select("#open").text("O: " + d.open);
+            text_top_container.select("#hight").text("H: " + d.hight);
+            text_top_container.select("#low").text("L: " + d.low);
+            text_top_container.select("#close").text("C: " + d.close);
+            text_top_container.select("#volume").text("V: " + formato_numero(d.volume, 3, ".", ","));
+            text_top_container.select("#change").text("Ch: " + obj.porciento + "%");
+
+            var ultimo_valor = data[data.length - 1];
             main_indicator_value
-                .style("top", y(ultimo_valor.porciento) - 3 + "px")
+                .style("top", y(ultimo_valor.close) - 3 + "px")
                 .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
-                .html(ultimo_valor.porciento + "%");
+                .html(ultimo_valor.close);
 
-        },
-        /** Calcula los datos de las comparaciones para la empresa que se le pase por parametro */
-        _m_calcular_porciento: function (fechaInicio, fechaFin, pos, simbolo) {
-            /** Coger los datos de esa empresa en el periodo activo */
-            var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, simbolo);
-            self.comparaciones["datos"][pos] = []; //limpio los datos que habian
-            var baseValue = +data[0].close; //dia 0 del periodo que voy a analizar
-            data.forEach(function (d, i) {
-                var tempValue = +data[i].close;
-                var t = (tempValue / baseValue) - 1;
-                self.comparaciones["datos"][pos].push({
-                    porciento: +t.toFixed(2), //redondeo a 2 lugares
-                    date: d.date,
-                    close: d.close
-                });
-            });
-        },
-
-        //Calcula el porciento solo para la empresa base, la 1ra de la grafica
-        _m_calcular_porciento1: function (data) {
-            self.comparaciones["datos"][0] = [];
-            var baseValue = +data[0].close; //dia 0 del periodo que voy a analizar
-            data.forEach(function (d, i) {
-                var tempValue = +data[i].close;
-                var t = (tempValue / baseValue) - 1;
-                self.comparaciones["datos"][0].push({
-                    porciento: +t.toFixed(2), //redondeo a 2 lugares
-                    date: d.date,
-                    close: d.close
-                });
-            });
-        },
-
-        _m_btn_comparar: function () {
-            d3.selectAll("a.comparadores").on("click", function () {
-                self.comparando = true;
-                var valor = parseInt(d3.select(this).attr("data-value"));
-                var simbolo = d3.select(this).attr("data-empresa");
-
-                //Revisar que no este entre los comparadores que tengo
-                var pos = self.comparaciones["simbolos"].indexOf(simbolo);
-                if (pos == -1) {
-                    //Agrego el simbolo y preparo arreglo apra sus datos
-                    self.comparaciones["simbolos"].push(simbolo);
-                    self.comparaciones["colores"].push(self.datos[valor].color);
-                    self.comparaciones["datos"].push([]);
-                    pos = self.comparaciones['simbolos'].length - 1;
-                }
-                var start = jQuery("#chart_start").val();
-                var end = jQuery("#chart_end").val();
-                var fechaInicio = parseDate(start);
-                var fechaFin = parseDate(end);
-
-                var span = d3.select(this).select("span");
-                var dataOperacion = span.attr("data-operacion");
-                if (dataOperacion == "+") {
-
-                    for (var i = 0; i < self.comparaciones['simbolos'].length; i++)
-                        self._m_calcular_porciento(fechaInicio, fechaFin, i, self.comparaciones['simbolos'][i]);
-
-                    span.style("background", "red");
-                    span.attr("data-operacion", "-");
-                    span.text("-");
-                    self._m_graficar_comparaciones();
-                } else {
-                    span.style("background", "green");
-                    span.attr("data-operacion", "+");
-                    span.text("+");
-
-                    // Elimina la linea que se selecciono
-                    //Elimino la linea y su circulo
-                    chart_container.select('path.line-porciento[data_titulo="' + simbolo + '"]').remove();
-                    d3.selectAll('circle[data_simbolo="' + simbolo + '"]').remove();
-
-                    //Elimino los datos para esa linea del arreglo de comparaciones
-                    pos = self.comparaciones["simbolos"].indexOf(simbolo);
-                    if (pos > -1) {
-                        self.comparaciones["simbolos"].splice(pos, 1);
-                        self.comparaciones["datos"].splice(pos, 1);
-                        self.comparaciones["colores"].splice(pos, 1);
-                    }
-
-                    //Si queda 1 sola comparacion
-                    if (self.comparaciones["simbolos"].length == 1) {
-                        var simbolo_base = self.datos[0].titulo;
-
-                        // Actualizo la variable comparando a false
-                        self.comparando = false;
-
-                        // Elimino el circulo
-                        focus.select('circle[data_simbolo="' + simbolo_base + '"]').remove();
-
-                        // Eliminar la linea de porciento
-                        chart_container.select('path[data_titulo="' + simbolo_base + '"]').remove();
-
-                        // Obtengo los datos de ese periodo y los grafico
-                        var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
-                        self._m_actualizar_grafica(data);
-                    } else {
-                        self._m_graficar_comparaciones();
-                    }
-
-                }
-            });
-        },
-
-        _m_actualizar_cambio_fecha: function () {
-            var start = jQuery("#chart_start").val();
-            var end = jQuery("#chart_end").val();
-            var fechaInicio = parseDate(start);
-            var fechaFin = parseDate(end);
-            // Obtener los datos de ese intervalo y luego actualizar la grafica
-            var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
-            if (data.length > 0) {
-                if (!self.comparando) {
-                    self._m_calcular_porciento1(data);
-                    self._m_actualizar_grafica(data);
-                }
-                else {
-                    //En este cqaso cambia el intervalo por lo que hay que calcular nuevamente todos los porcientos de las empresas
-                    // e indicadores que se estban comparando.
-                    self.comparaciones["simbolos"].forEach(function (simbolo, i) {
-                        self._m_calcular_porciento(fechaInicio, fechaFin, i, simbolo);
-                    });
-                    self._m_graficar_comparaciones();
-                }
-            }
-            return false;
-        },
-
+            main_indicator_default
+                .style("left", -1 * (self.configuracion.width + self.configuracion.margin.left) + "px");
+        }
+        ,
         _m_actualizar_grafica: function (data) {
 
             //Actualizo el dominio de los ejes
@@ -507,6 +414,696 @@ if (typeof Object.create !== 'function') {
                 .style("top", y(ultimo_valor.close) - 3 + "px")
                 .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
                 .html(ultimo_valor.close);
+        },
+
+        _m_iniciar_elementos_dom: function () {
+            chart_container = d3.select(self.configuracion.id).append("div");
+            chart_container.attr("id", "main_chart_svg").attr("class", "main_chart_svg");
+
+            self._m_iniciar_variables();
+
+            //main_svg = chart_container
+            main_svg = d3.select("#main_chart_svg #chart-container")
+                .append("svg")
+                .attr("id", "chart_svg")
+                //.style("background", "#F0F6FD")
+                .attr("width", self.configuracion.width + self.configuracion.margin.left + self.configuracion.margin.right)
+                .attr("height", self.configuracion.height + self.configuracion.margin.top + self.configuracion.margin.bottom);
+
+            main_svg.append("defs").append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                .attr("width", self.configuracion.width)
+                .attr("height", self.configuracion.height);
+
+            svg = main_svg
+                .append("g")
+                .attr("class", "g-main")
+                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin.top + ")");
+
+            // Grillas para el eje X
+            svg.append("g")
+                .attr("class", "grid x")
+                .attr("transform", "translate(0," + self.configuracion.height + ")");
+
+            // Grillas para el eje Y
+            svg.append("g")
+                .attr("class", "grid y");
+
+            //g para mostrar las lineas discontinuas cuando se mueve el mouse
+            focus = svg.append("g")
+                .attr("class", "focus")
+                .style("display", "none");
+
+            text_top_container = chart_container.select("#chart-container").append("div")
+                .attr("class", "text_top_container");
+
+            //text_top_container.append("div")
+            //    .attr("class", "titulo_top")
+            //    .text(self.configuracion.titulo);
+
+            var datosTop = [["titulo", self.configuracion.titulo], ["open", "Open: 0"], ["hight", "Hight: 0"], ["low", "Low: 0"], ["close", "Close: 0"], ["volume", "Volume: 0"], ["change", "Change: 0"]];
+            text_top_container.selectAll("textos")
+                .data(datosTop)
+                .enter()
+                .append("span")
+                .attr("class", "text_top")
+                .attr("id", function (d) {
+                    return d[0];
+                })
+                .text(function (d) {
+                    return d[1];
+                });
+
+            // TODO la 2 linea es para quitar la grafica de barras e ir probando el brush
+            focus_barra = main_svg.append("g")
+                //.style("display", "none") //temporal para probar la otra grafica dgfuentes
+                .attr("class", "focus_barra")
+                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
+
+            barras = focus_barra.append("g")
+                .attr("class", "rect_barras");
+
+            focus_barra.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
+
+            focus_barra.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + self.configuracion.height2 + ")")
+                .append("line")
+                .attr("class", "line-bottom")
+                .attr("x1", "0")
+                .attr("x2", self.configuracion.width)
+                .style("stroke", "black")
+                .style("opacity", "1");
+
+            //Estableciendo el ancho de la grafica
+            var width = parseInt(d3.select("#chart-container").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
+            self.configuracion.width = width;
+
+            //g contenedor del brush
+            g_brush = main_svg.append("g")
+                .attr("class", "g_brush")
+                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin3.realtop + ")");
+
+            tooltip = d3.select("#chart-container").append('div')
+                .style('position', 'absolute')
+                .attr('class', 'tooltip-info');
+
+            tip_current_date = d3.select("#chart-container").append('div')
+                .attr('class', 'tip_current_date');
+
+            main_indicator_value = d3.select("#chart-container").append('div')
+                .attr('class', 'indicator main_indicator_value')
+                .style('background', self.datos[0].color);
+
+            main_indicator_default = d3.select("#chart-container").append('div')
+                .style("left", "-100px")
+                .attr('class', 'indicator main_indicator_default');
+        }
+        ,
+
+        _m_crear_chart_header: function () {
+
+            var header = '<div id="chart-global-header"><div class="chart-rangos btn-group"></div></div>';
+
+            chart_container.html(header);
+            chart_header = jQuery('#chart-global-header');
+
+            var rangos = d3.select(".chart-rangos");
+
+            rangos.selectAll("misbotones")
+                .data(self.periodos)
+                .enter()
+                .append("button")
+                .attr("class", function (p) {
+                    var clase = "m btn btn-default btn-md";
+                    return p.activo ? clase + " active" : clase
+                })
+                .attr("type", "button")
+                .attr("data-value", function (p) {
+                    return p.cantidad;
+                })
+                .attr("data-class", function (p) {
+                    return p.tipo;
+                })
+                .text(function (p) {
+                    return p.texto;
+                });
+
+            //Crear dropdown con las emrpesas, comenzando por 1
+            var LI = "";
+            for (var i = 1; i < self.datos.length; i++) {
+                var d = self.datos[i];
+                LI += '<li><a data-empresa="' + d.titulo + '" data-value="' + i + '" href="#" class="comparadores"> <span data-operacion="+" class="operacion">+</span>' + d.titulo + '</a></li>';
+            }
+
+            var btnDropdown = '<div class="btn-group form-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
+                'Comparar<span class="caret"></span></button><ul class="dropdown-menu comparar">' + LI + '</ul></div>';
+
+            var indicadores = [{nombre: 'Indicador A', simbolo: 'A'}, {
+                nombre: 'Indicador B',
+                simbolo: 'B'
+            }, {nombre: 'Indicador C', simbolo: 'C'}];
+            var Li_indicadores = "";
+            for (var pos = 0; pos < indicadores.length; pos++) {
+                var ind = indicadores[pos];
+                Li_indicadores += '<li><a data-indicador="' + ind.simbolo + '" data-value="' + ind.nombre + '" href="#" class="indicador"> <span data-operacion="+" class="operacion">+</span>' + ind.nombre + '</a></li>';
+            }
+            var btnIndicadores = '<div class="form-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
+                'Indicadores<span class="caret"></span></button><ul class="dropdown-menu">' + Li_indicadores + '</ul></div>';
+
+            var btnReiniciar = '<div class="form-group"> <button id="btn_reiniciar" class="btn btn-default" type="button">Reiniciar</button></div>';
+            var btnReiniciar1 = '<div class="form-group"> <button id="btn_reiniciar1" class="chart-btn" type="button">TEST</button></div>';
+            var input_fecha_inicio = '<div class="form-group"><input type="text" placeholder="Desde" name="inicio" id="chart_start" class="form-control"></div>';
+            var input_fecha_fin = '<div class="form-group"><input type="text" placeholder="Hasta" name="fin" id="chart_end" class="form-control"></div>';
+
+            var contenedor_fecha =
+                '<div class="parametros">' +
+                '<div class="todos">' +
+                input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar +
+                '<div class="clearfix"></div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="clearfix"></div>';
+            chart_header.html(chart_header.html() + contenedor_fecha);
+            chart_container.html(chart_container.html() + '<div id="chart-container">' + _crear_leyenda() + '</div>');
+
+            //Crear leyenda
+            function _crear_leyenda() {
+                return '<div class="leyenda"><div class="wrapper"></div></div>';
+            }
+        }
+        ,
+
+        _m_iniciar_variables: function () {
+            this._m_crear_chart_header();
+            self.configuracion.width = self.configuracion.width - self.configuracion.margin.left - self.configuracion.margin.right;
+            self.configuracion.height = self.configuracion.height - self.configuracion.margin.top - self.configuracion.margin.bottom;
+            self.configuracion.margin2.realtop = self.configuracion.height + self.configuracion.margin2.top;
+            self.configuracion.margin3.realtop = self.configuracion.margin2.realtop + self.configuracion.margin3.top;
+
+            self.comparaciones["simbolos"] = [];
+            self.comparaciones["datos"] = [];
+            self.comparaciones["colores"] = [];
+            self.comparaciones["simbolos"].push(self.datos[0].titulo);
+            self.comparaciones["datos"].push([]);
+            self.comparaciones["colores"].push(self.datos[0].color);
+
+            chart_fecha_inicio = "";
+            chart_fecha_fin = "#chart_end";
+            animation_time = 750;
+            current_date_width = 100;
+            current_date_height = 25;
+
+            //Estas dos variables guardaran los objetos Datepicker dew inicio y fin respectivamente
+            chart_fecha_inicio = null;
+            chart_fecha_fin = null;
+            self._m_configurar_selector_de_fecha(self.datos[0].data[0].date, self.datos[0].data[self.datos[0].data.length - 1].date);
+
+            //Convierte un string en este formato a un objeto Date
+            parseDate = d3.time.format("%Y-%m-%d").parse;
+
+            // Convierte un objeto Date al formato "ano-mes-dia" Ex: 2015-02-27
+            formatFecha = d3.time.format("%Y-%m-%d");
+
+            // Convierte un objeto Date al formato "mes, dia, ano" Ex: Febrero, 03, 2015
+            formatDate = d3.time.format("%b %d, %Y");
+            bisectDate = d3.bisector(function (d) {
+                return d.date;
+            }).left;
+
+            // Escalando X and Y
+            x = d3.time.scale().range([0, self.configuracion.width]);
+            y = d3.scale.linear().range([self.configuracion.height, 0]);
+
+            //Scala para x y y de la grafica de barras
+            x2 = d3.scale.ordinal().rangeBands([0, self.configuracion.width], .02);
+            y2 = d3.scale.linear().range([0, self.configuracion.height2]);
+
+            //Esta se usa solo para la grafica que indica el eje y de la grafica de barras
+            y2_1 = d3.scale.linear().range([self.configuracion.height2, 0]);
+
+            // Eje X y Eje y
+            xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5);
+            yAxis = d3.svg.axis().scale(y).orient("right").ticks(5);
+
+            //Ejes para la grafica de barra
+            //xAxis2 = d3.svg.axis().scale(x2).orient("bottom").tickFormat(d3.time.format("%d"));
+            yAxis2 = d3.svg.axis().scale(y2_1).orient("right").ticks(3);
+
+            // Define que valores va a graficar la linea para cada eje
+            valueline = d3.svg.line()
+                .x(function (d) {
+                    return x(d.date);
+                })
+                .y(function (d) {
+                    return y(d.close);
+                });
+
+            //Datos para la grafica del brush
+            x_brush = d3.time.scale().range([0, self.configuracion.width]);
+            y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
+
+            xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom").ticks(5);
+
+            brush = d3.svg.brush().x(x_brush);
+
+            area = d3.svg.area()
+                .interpolate("monotone")
+                .x(function (d) {
+                    return x_brush(d.date);
+                })
+                .y0(self.configuracion.height3)
+                .y1(function (d) {
+                    return y_brush(d.close);
+                });
+        }
+        ,
+
+        _m_resize: function () {
+
+            d3.select(window).on('resize', resize);
+
+            resize();
+
+            function resize() {
+
+                var width = parseInt(d3.select("#chart-container").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
+
+                self.configuracion.width = width;
+                var width_chartcontainer = parseInt(d3.select("#chart-container").style("width"));
+                var width_leyenda = parseInt(chart_container.select(".leyenda").style("width"));
+
+                var svg_width = parseInt(d3.select("#chart-container>svg").style("width"));
+                //chart_container.select("svg").style("width", svg_width);
+
+                // Cambiar ancho del mouse-move
+                chart_container.select(".mouse-move")
+                    .attr("width", width);
+
+                //Actualizar tamano de linea discontinua horizontal
+                chart_container.select(".y.linea-horizontal")
+                    .attr("x1", width);
+
+                //Actualizando grafica de linea
+                x.range([0, width]);
+                //xAxis.ticks(Math.max((width / 50) - 2, 2));
+                xAxis.ticks(3);
+
+                //Actualizar eje x
+                chart_container.select(".g-main").select('.x.axis')
+                    .call(xAxis);
+
+                //Actualizar lineas tranparentes
+                chart_container.select(".g-main").select("g.grid.x")
+                    .call(dibujar_eje_x(x)
+                        .tickSize(-self.configuracion.height, 0, 0)
+                        .tickFormat("")
+                );
+
+                chart_container.select(".g-main").select("g.grid.y")
+                    .call(dibujar_eje_y(y)
+                        .tickSize(-self.configuracion.width, 0, 0)
+                        .tickFormat("")
+                );
+
+                //Actualizando el eje y cuando re redimensiona la pantalla
+                svg.select(".y.axis")
+                    .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
+                //--------------------------------------------------
+
+                //Actualizando grafica de barras
+                x2.rangeBands([0, width], .02);
+
+                //linea del eje x
+                focus_barra.select('.line-bottom').attr("x2", width);
+
+                //Actualizando el eje y cuando se redimenciona la pantalla
+                focus_barra.select(".y.axis")
+                    .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
+
+                focus_barra.selectAll(".bar")
+                    .attr("x", function (d) {
+                        return x2(d.date);
+                    })
+                    .attr("width", x2.rangeBand());
+                //--------------------------------------------------
+
+                //Actualizando brush
+                x_brush.range([0, width]);
+                //xAxis_brush.ticks(Math.max((width / 50) - 10, 2));
+                xAxis_brush.ticks(5);
+
+                //Actualizando grafica de area
+                g_brush.select(".area")
+                    .attr("d", area);
+
+                //Actualizando eje x del brush
+                g_brush.select(".x_brush")
+                    .call(xAxis_brush);
+
+                brush.x(x_brush);
+                g_brush.select(".brush")
+                    .call(brush);
+
+                //----------------------------------------------------
+
+                if (self.comparando) {
+                    chart_container.select(".g-main").selectAll(".line.line-porciento")
+                        .attr("d", linea_porciento);
+
+                    //Actualizanop posicion de los indicadores diferentes del default
+                    self.comparaciones["simbolos"].forEach(function (simbolo, i) {
+                        if (i > 0) { //mayor que 0 porque en 0 esta el default
+                            chart_container.select(".indicator_" + simbolo)
+                                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px");
+                        }
+                    });
+
+                } else {
+                    //Actualizar lilnea
+                    chart_container.select(".g-main").select('.line-main')
+                        .attr("d", valueline);
+                }
+
+                //Actualizando la posicion del indicador por default
+                main_indicator_value
+                    .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px");
+
+                main_indicator_default
+                    .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px");
+            }
+        }
+        ,
+
+        _m_graficar_comparaciones: function () {
+            var maxValue_porciento = 0, minValue_porciento = 0;
+
+            //Dominio para el eje Y
+            self.comparaciones["datos"].forEach(function (data) {
+                var tempMaxValue = d3.max(data, function (d) {
+                    return +d.porciento;
+                });
+
+                maxValue_porciento = maxValue_porciento < tempMaxValue ? tempMaxValue : maxValue_porciento;
+
+                var tempMinValue = d3.min(data, function (d) {
+                    return +d.porciento;
+                });
+                minValue_porciento = minValue_porciento > tempMinValue ? tempMinValue : minValue_porciento;
+            });
+
+            //valor adicional para sumarle a los ejes
+            var add = 0;
+            var tempTiksArray = y.ticks();
+            if (tempTiksArray > 2) {
+                //toma la diferencia entre 2 ticks para adicionar a la grafica uno mas
+                add = tempTiksArray[1] - tempTiksArray[0];
+            } else {
+                add = (maxValue_porciento - minValue_porciento) / (parseInt(yAxis.ticks()[0]) + 1);
+            }
+
+            if (add == 0)
+                add = minValue_porciento + 1;
+            //Actualizo el dominio del eje x
+            x.domain(d3.extent(self.comparaciones["datos"][0], function (d) {
+                return d.date;
+            }));
+
+            y.domain([minValue_porciento - add, maxValue_porciento + add]);
+
+            self.comparaciones["datos"].forEach(function (data, i) {
+                //Creando los indicadores para todos los simbolos excepto el default
+                if (i > 0) {// por eso es esta condicion
+                    var current_indicator = chart_container.select('.indicator_' + self.comparaciones["simbolos"][i]);
+
+                    if (current_indicator.empty()) {
+                        d3.select("#chart-container").append('div')
+                            .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                            .style("top", y(data[data.length - 1].porciento) - 3 + "px")
+                            .style("background", self.comparaciones["colores"][i])
+                            .attr('class', 'indicator comp indicator_' + self.comparaciones["simbolos"][i])
+                            .html(data[data.length - 1].porciento + "%");
+                    } else {
+                        current_indicator
+                            .style("top", y(data[data.length - 1].porciento) - 3 + "px")
+                            .html(data[data.length - 1].porciento + "%");
+                    }
+                }
+
+                //var ultimo_comp = data[data.length - 1];
+                //Posicionando el ultimo valor de porciento del periodo que se esta graficando
+                //chart_container.select(".indicator_" + self.comparaciones["simbolos"][i])
+                //    .style("background", self.comparaciones["colores"][i])
+                //    .style("top", y(+ultimo_comp.porciento) - 3 + "px")
+                //    .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                //    .html(ultimo_comp.porciento + "%");
+            });
+
+            yAxis.tickFormat(function (tickValue) {
+                if (tickValue == "0")
+                    return tickValue + "%";
+                else if (parseFloat(tickValue.toFixed(2)) == '-0')
+                    return "0%";
+                else
+                    return tickValue.toFixed(2) + "%";
+            });
+
+            //Dominio para la grafica de barra
+            x2.domain(self.comparaciones["datos"][0].map(function (d) {
+                return d.date;
+            }));
+
+            //Borrar las lineas que estaban, actualmente, pero luego las voy a ocultar simplemente
+            svg.selectAll("path.line-porciento").remove();
+
+            //Oculto el circulo de la grafica principal
+            focus.select('circle.y').classed("hidden", true);
+
+            // Selecciono el elemento donde voy a comenzar la transicion
+            main_svg = d3.select("#chart-container>svg");
+            //.transition()
+            //.duration(animation_time);
+
+            //Repinta las lineas de la grilla para el eje X
+            main_svg.select("g.grid.x")
+                .call(dibujar_eje_x(x)
+                    .tickSize(-self.configuracion.height, 0, 0)
+                    .tickFormat("")
+            );
+
+            //Repinta las lineas de la grilla para el eje Y
+            main_svg.select("g.grid.y")
+                .call(dibujar_eje_y(y)
+                    .tickSize(-self.configuracion.width, 0, 0)
+                    .tickFormat("")
+            );
+
+            linea_porciento = d3.svg.line()
+                .x(function (d) {
+                    return x(d.date);
+                })
+                .y(function (d) {
+                    return y(d.porciento);
+                });
+
+            //oculto la linea que estaba dibujada, la principal
+            main_svg.select(".line-main").classed("hidden", true);
+
+            var g_main = main_svg.select(".g-main");
+
+            self.comparaciones["datos"].forEach(function (data, i) {
+                //agregando las lineas
+                g_main.append("path")
+                    .datum(data)
+                    .attr("class", "line line-porciento")
+                    .attr("data_titulo", self.comparaciones['simbolos'][i])
+                    .attr("stroke", self.comparaciones['colores'][i])
+                    .attr("d", linea_porciento);
+
+                //agregando el punto que se va a mover por cada linea, cuando se mueva el mouse
+                var circulo = focus.select('circle[data_simbolo="' + self.comparaciones['simbolos'][i] + '"]');
+                if (circulo.empty()) {
+                    focus.append("circle")
+                        .attr("class", "circle-porciento")
+                        .attr("data_simbolo", self.comparaciones['simbolos'][i])
+                        .style("fill", self.comparaciones['colores'][i]) //color de relleno del circulo
+                        .attr("r", 4);
+                }
+            });
+
+            //Actualizo el eje X
+            svg.select(".x.axis")
+                .call(xAxis);
+
+            //Actualizo el eje Y
+            svg.select(".y.axis")
+                .call(yAxis);
+
+            var total = self.comparaciones["datos"][0].length - 1;
+            var fechaInicio = self.comparaciones["datos"][0][0].date;
+            var fechaFin = self.comparaciones["datos"][0][total].date;
+            var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
+
+            y2.domain([0, d3.max(data, function (d) {
+                return d.volume;
+            })]);
+
+            y2_1.domain(y2.domain());
+
+            // Actualizando rango del brush
+            brush.extent(x.domain());
+            chart_container.select(".brush").transition().call(brush);
+
+            focus_barra.select(".y.axis")
+                .call(yAxis2);
+
+            //Actualizar grafica de barras
+            self._m_graficar_barras(data);
+
+            //MOUSE MOVE COMPARACIONES
+            var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
+            self._m_mouse_move_comparaciones(rectangulo, data);
+
+            var ultimo_valor = self.comparaciones["datos"][0][self.comparaciones["datos"][0].length - 1];
+            main_indicator_value
+                .style("top", y(ultimo_valor.porciento) - 3 + "px")
+                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
+                .html(ultimo_valor.porciento + "%");
+        },
+
+        /** Calcula los datos de las comparaciones para la empresa que se le pase por parametro */
+        _m_calcular_porciento: function (fechaInicio, fechaFin, pos, simbolo) {
+            /** Coger los datos de esa empresa en el periodo activo */
+            var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, simbolo);
+            self.comparaciones["datos"][pos] = []; //limpio los datos que habian
+            var baseValue = +data[0].close; //dia 0 del periodo que voy a analizar
+            data.forEach(function (d, i) {
+                var tempValue = +data[i].close;
+                var t = (tempValue / baseValue) - 1;
+                self.comparaciones["datos"][pos].push({
+                    porciento: +t.toFixed(2), //redondeo a 2 lugares
+                    date: d.date,
+                    close: d.close
+                });
+            });
+        },
+
+        //Calcula el porciento solo para la empresa base, la 1ra de la grafica
+        _m_calcular_porciento1: function (data) {
+            self.comparaciones["datos"][0] = [];
+            var baseValue = +data[0].close; //dia 0 del periodo que voy a analizar
+            data.forEach(function (d, i) {
+                var tempValue = +data[i].close;
+                var t = (tempValue / baseValue) - 1;
+                self.comparaciones["datos"][0].push({
+                    porciento: +t.toFixed(2), //redondeo a 2 lugares
+                    date: d.date,
+                    close: d.close
+                });
+            });
+        },
+
+        _m_btn_comparar: function () {
+            d3.selectAll("a.comparadores").on("click", function () {
+                self.comparando = true;
+                var valor = parseInt(d3.select(this).attr("data-value"));
+                var simbolo = d3.select(this).attr("data-empresa");
+
+                //Revisar que no este entre los comparadores que tengo
+                var pos = self.comparaciones["simbolos"].indexOf(simbolo);
+                if (pos == -1) {
+                    //Agrego el simbolo y preparo arreglo apra sus datos
+                    self.comparaciones["simbolos"].push(simbolo);
+                    self.comparaciones["colores"].push(self.datos[valor].color);
+                    self.comparaciones["datos"].push([]);
+                    pos = self.comparaciones['simbolos'].length - 1;
+                }
+                var start = jQuery("#chart_start").val();
+                var end = jQuery("#chart_end").val();
+                var fechaInicio = parseDate(start);
+                var fechaFin = parseDate(end);
+
+                var span = d3.select(this).select("span");
+                var dataOperacion = span.attr("data-operacion");
+                if (dataOperacion == "+") {
+
+                    for (var i = 0; i < self.comparaciones['simbolos'].length; i++)
+                        self._m_calcular_porciento(fechaInicio, fechaFin, i, self.comparaciones['simbolos'][i]);
+
+                    span.style("background", "red");
+                    span.attr("data-operacion", "-");
+                    span.text("-");
+                    self._m_graficar_comparaciones();
+                } else { // Si doy click en el -
+                    span.style("background", "green");
+                    span.attr("data-operacion", "+");
+                    span.text("+");
+
+                    // Elimina la linea que pertenece a la empresa que se selecciono
+                    chart_container.select('path.line-porciento[data_titulo="' + simbolo + '"]').remove();
+
+                    // Elimino la linea y su circulo
+                    d3.selectAll('circle[data_simbolo="' + simbolo + '"]').remove();
+
+                    // Elimino el indicador de esa empresa
+                    chart_container.select(".indicator_" + simbolo).remove();
+
+                    // Elimino los datos para esa linea del arreglo de comparaciones
+                    pos = self.comparaciones["simbolos"].indexOf(simbolo);
+                    if (pos > -1) {
+                        self.comparaciones["simbolos"].splice(pos, 1);
+                        self.comparaciones["datos"].splice(pos, 1);
+                        self.comparaciones["colores"].splice(pos, 1);
+                    }
+
+                    // Si queda 1 sola comparacion
+                    if (self.comparaciones["simbolos"].length == 1) {
+                        var simbolo_base = self.datos[0].titulo;
+
+                        // Actualizo la variable comparando a false
+                        self.comparando = false;
+
+                        // Elimino el circulo
+                        focus.select('circle[data_simbolo="' + simbolo_base + '"]').remove();
+
+                        // Eliminar la linea de porciento
+                        chart_container.select('path[data_titulo="' + simbolo_base + '"]').remove();
+
+                        // Obtengo los datos de ese periodo y los grafico
+                        var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
+                        self._m_actualizar_grafica(data);
+                    } else {
+                        self._m_graficar_comparaciones();
+                    }
+                }
+            });
+        },
+
+        _m_actualizar_cambio_fecha: function () {
+            var start = jQuery("#chart_start").val();
+            var end = jQuery("#chart_end").val();
+            var fechaInicio = parseDate(start);
+            var fechaFin = parseDate(end);
+            // Obtener los datos de ese intervalo y luego actualizar la grafica
+            var data = self._m_obtener_datos_de_intervalo(fechaInicio, fechaFin, self.datos[0].titulo);
+            if (data.length > 0) {
+                if (!self.comparando) {
+                    self._m_calcular_porciento1(data);
+                    self._m_actualizar_grafica(data);
+                }
+                else {
+                    //En este cqaso cambia el intervalo por lo que hay que calcular nuevamente todos los porcientos de las empresas
+                    // e indicadores que se estban comparando.
+                    self.comparaciones["simbolos"].forEach(function (simbolo, i) {
+                        self._m_calcular_porciento(fechaInicio, fechaFin, i, simbolo);
+                    });
+                    self._m_graficar_comparaciones();
+                }
+            }
+            return false;
         },
 
         _m_evento_click_periodos: function () {
@@ -884,7 +1481,7 @@ if (typeof Object.create !== 'function') {
         }
         ,
 
-        _m_evento_click_reset: function () {
+        _m_evento_click_reiniciar: function () {
             d3.select("#btn_reiniciar").on("click", function () {
                 if (self.comparando) {
                     self.comparando = false;
@@ -896,7 +1493,8 @@ if (typeof Object.create !== 'function') {
                     for (var i = 0; i < simbolos.length; i++) {
                         chart_container.select('path.line-porciento[data_titulo="' + simbolos[i] + '"]').remove();
                         focus.select('circle[data_simbolo="' + simbolos[i] + '"]').remove();
-                        chart_container.select('span[data_simbolo="' + simbolos[i] + '"]').remove();
+                        chart_container.select('.indicator_' + simbolos[i]).remove();
+                        //chart_container.select('span[data_simbolo="' + simbolos[i] + '"]').remove();
                     }
 
                     var todos_span = d3.selectAll("ul.comparar span");
@@ -906,14 +1504,13 @@ if (typeof Object.create !== 'function') {
                     // Quitar los valores del Dropdown Comparar
                     // Quitar las comparaciones de la leyenda, Todas
                     // Quitar los circulos
-                    //Desmarcar los simbolos que estaban marcados (dentro del span)
+                    // Desmarcar los simbolos que estaban marcados (dentro del span)
                     //y de 1 vez cambiarle el fondo a color verde
 
                     // Luego obtener los datos
                     //y graficar los del intervalo activo inicialmente por el usuario
                     var simbolo_base = self.datos[0].titulo;
                     focus.select('circle[data_simbolo="' + simbolo_base + '"]').remove();
-                    chart_container.select('span[data_simbolo="' + simbolo_base + '"]').remove();
                     chart_container.select('path[data_titulo="' + simbolo_base + '"]').remove();
                 }
                 var data = self._m_seleccionar_datos_a_graficar();
@@ -1017,591 +1614,6 @@ if (typeof Object.create !== 'function') {
                     }
                 }
                 return false;
-            }
-        }
-        ,
-        /**Metodo principal*/
-        m_graficar: function () {
-            self = this;
-            if (!this._m_datos_correctos()) {
-                console.error("m_graficar -> Configuracion de datos incorrectos");
-                return;
-            }
-            self._m_iniciar_elementos_dom();
-            self._m_btn_comparar(); //Inicializa los eventos click en el DropDown de comparar
-            self._m_evento_click_periodos();
-            self._m_evento_click_reset();
-            self._m_evento_brush();
-            if (!self._m_preparar_Datos()) {
-                console.error("m_graficar -> Configuracion de datos incorrectos");
-                return;
-            }
-
-
-            //Datos que se van a graficar
-            var data = self._m_seleccionar_datos_a_graficar();
-
-            if (data == null || data.length == 0 || self.datos.length == 0) {
-                console.error("m_raficar -> No hay datos para este intervalo");
-                return;
-            } else { //Datos correctos
-                var fechaInicio = data[0].date;
-                var fechaFin = data[data.length - 1].date;
-                jQuery("#chart_start").val(formatFecha(fechaInicio));
-                jQuery("#chart_end").val(formatFecha(fechaFin));
-
-                //Aqui solo hay que calcular el porciento y no hay que dibujarlo
-                self._m_calcular_porciento(fechaInicio, fechaFin, 0, self.datos[0].titulo);
-            }
-
-            //establece el dominio para el eje x (es decir, de donde a donde van los valores)
-            x.domain(d3.extent(data, function (d) {
-                return d.date;
-            }));
-
-            var min = d3.min(data, function (d) {
-                return d.close;
-            });
-
-            var max = d3.max(data, function (d) {
-                return d.close;
-            });
-
-            var add = 0;
-            var tempTiksArray = y.ticks();
-            if (tempTiksArray > 2) {
-                //toma la diferencia entre 2 ticks para adicionar a la grafica uno mas
-                add = tempTiksArray[1] - tempTiksArray[0];
-            } else {
-                add = (max - min) / (parseInt(yAxis.ticks()[0]) + 1);
-            }
-
-            //Nota: Si el min y el max son iguales, entonces el sumo la mitad a ambos
-            if (add == 0) {
-                add = min + 1;
-            }
-
-            y.domain([min - add, max + add]);
-
-            x_brush.domain(d3.extent(self.datos[0].data, function (d) {
-                return d.date;
-            }));
-            y_brush.domain(d3.extent(self.datos[0].data, function (d) {
-                return d.close;
-            }));
-
-            //Dominio para la grafica de barra
-            x2.domain(data.map(function (d) {
-                return d.date;
-            }));
-
-            y2.domain([0, d3.max(data, function (d) {
-                return d.volume;
-            })]);
-            y2_1.domain(y2.domain());
-
-            // Grillas para el eje X
-            svg.select(".grid.x")
-                .call(dibujar_eje_x(x)
-                    .tickSize(-self.configuracion.height, 0, 0)
-                    .tickFormat(""));
-
-            // Grillas para el eje Y
-            svg.select(".grid.y")
-                .call(dibujar_eje_y(y)
-                    .tickSize(-self.configuracion.width, 0, 0)
-                    .tickFormat(""));
-
-            //  Adiciona el eje X
-            svg.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + self.configuracion.height + ")")
-                .call(xAxis);
-
-            //  Adiciona el Eje Y
-            svg.append("g")
-                .attr("class", "y axis")
-                .attr("transform", "translate(" + (self.configuracion.width) + ",0)")
-                .call(yAxis);
-
-            svg.append("g")
-                .attr("class", "liena-1 axis")
-                .append("line")
-                .attr("stroke", "black")
-                .attr("stroke-width", 1)
-                .attr("y1", 0)
-                .attr("y2", self.configuracion.height);
-
-            // Add the valueline path.
-            svg.append("path")
-                .datum(data)
-                .attr("clip-path", "url(#clip)")
-                .attr("class", "line line-main")
-                .attr("stroke", self.datos[0].color)
-                .attr("d", valueline);
-
-            // Adiciona linea discontinua vertical, que se va a mostrar cuando se mueva el mouse
-            focus.append("line")
-                .attr("class", "x linea-vertical hidden") // la pone oculta inicialmente
-                .style("stroke", "#23649E")
-                .style("stroke", "black")
-                .style("stroke-dasharray", "3,3") // Pone discontinua la linea
-                .attr("y1", 0)
-                .attr("y2", 0);
-
-            // Adiciona linea discontinua horizontal, que se va a mostrar cuando se mueva el mouse
-            focus.append("line")
-                .attr("class", "y hidden linea-horizontal") // La oculta inicialmente
-                .style("stroke", "black")
-                .style("stroke-dasharray", "3,3")
-                .attr("x1", self.configuracion.width)
-                .attr("x2", self.configuracion.width);
-
-            //Creando Circulo para posicionar en la interseccion
-            var valor = -2 * self.configuracion.margin.left; //esto es para que el circulo por defecto no se vea en la grafica
-            focus.append("circle")
-                .attr("class", "y")
-                .attr("transform", "translate(" + valor + ",0)")
-                .style("fill", self.datos[0].color) //color de relleno del circulo
-                .attr("r", 4);
-
-            //dibuja la grafica de barras
-            self._m_graficar_barras(data);
-
-            /* Creando rectangulo que indica la fecha actual cuando se mueve el mouse  mouse*/
-            var rect = svg.append("rect")
-                .style("display", "none")
-                .attr("class", "current_date")
-                .attr('width', current_date_width)
-                .attr('height', current_date_height)
-                .attr('x', 0)
-                .attr('y', -2 * current_date_height) // esto es para que por defecto no se vea en la grafica
-                .attr("rx", 0)         // set the x corner curve radius
-                .attr("ry", 0)        // set the y corner curve radius
-                .style('fill', "black");
-
-            // Texto que se muestra dentro del cuadro que se mueve
-            svg.append("text")
-                .style('display', "none")
-                //.attr("text-anchor", "middle")
-                .attr('class', "current_date_text")
-                .attr("x", 0)
-                .attr('y', -2 * current_date_height)
-                .style("fill", "#ffffff") // color blanco el texto
-                .text(this.datos[0].titulo);
-
-            // Agregandole los datos al brush
-            g_brush.append("path")
-                .datum(self.datos[0].data)
-                .attr("class", "area")
-                .style("fill", self.datos[0].color)
-                .attr("d", area);
-
-            //Eje x del brush
-            g_brush.append("g")
-                .attr("class", "x_brush axis_brush")
-                .attr("transform", "translate(0," + self.configuracion.height3 + ")")
-                .call(xAxis_brush);
-
-            //Asignandole a el brush el rango activo
-            brush.extent(x.domain());
-
-            g_brush.append("g")
-                .attr("class", "brush")
-                .call(brush)
-                .selectAll("rect")
-                .attr("y", -6)
-                .attr("height", self.configuracion.height3 + 7);
-
-            // Agregando un rectangulo para capturar el mouse
-            //Este rectangulo tiene las mismas dimeciones que la grafica
-            var rectangulo = self._m_crear_rect_mouse_move_datos(svg);
-            self._m_mouse_move_datos(rectangulo, data);
-            self._m_resize(); //Inicializa el evento window resize para la grafica
-
-            var d = self.datos[0].data[self.datos[0].data.length - 1];
-            var obj = self.comparaciones["datos"][0][self.comparaciones["datos"][0].length - 1];
-
-            text_top_container.select("#open").text("O: " + d.open);
-            text_top_container.select("#hight").text("H: " + d.hight);
-            text_top_container.select("#low").text("L: " + d.low);
-            text_top_container.select("#close").text("C: " + d.close);
-            text_top_container.select("#volume").text("V: " + formato_numero(d.volume, 3, ".", ","));
-            text_top_container.select("#change").text("Ch: " + obj.porciento + "%");
-
-            var ultimo_valor = data[data.length - 1];
-            main_indicator_value
-                .style("top", y(ultimo_valor.close) - 3 + "px")
-                .style("left", (self.configuracion.width + self.configuracion.margin.left) + "px")
-                .html(ultimo_valor.close);
-
-            main_indicator_default
-                .style("left", -1 * (self.configuracion.width + self.configuracion.margin.left) + "px");
-        }
-        ,
-
-        _m_resize: function () {
-
-            d3.select(window).on('resize', resize);
-
-            resize();
-
-            function resize() {
-
-                var width = parseInt(d3.select("#chart-container").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
-
-                self.configuracion.width = width;
-                var width_chartcontainer = parseInt(d3.select("#chart-container").style("width"));
-                var width_leyenda = parseInt(chart_container.select(".leyenda").style("width"));
-
-                var svg_width = parseInt(d3.select("#chart-container>svg").style("width"));
-                //chart_container.select("svg").style("width", svg_width);
-
-                // Cambiar ancho del mouse-move
-                chart_container.select(".mouse-move")
-                    .attr("width", width);
-
-                //Actualizar tamano de linea discontinua horizontal
-                chart_container.select(".y.linea-horizontal")
-                    .attr("x1", width);
-
-                //Actualizando grafica de linea
-                x.range([0, width]);
-                //xAxis.ticks(Math.max((width / 50) - 2, 2));
-                xAxis.ticks(3);
-
-                //Actualizar eje x
-                chart_container.select(".g-main").select('.x.axis')
-                    .call(xAxis);
-
-                //Actualizar lineas tranparentes
-                chart_container.select(".g-main").select("g.grid.x")
-                    .call(dibujar_eje_x(x)
-                        .tickSize(-self.configuracion.height, 0, 0)
-                        .tickFormat("")
-                );
-
-                chart_container.select(".g-main").select("g.grid.y")
-                    .call(dibujar_eje_y(y)
-                        .tickSize(-self.configuracion.width, 0, 0)
-                        .tickFormat("")
-                );
-
-                //Actualizando el eje y cuando re redimensiona la pantalla
-                svg.select(".y.axis")
-                    .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
-                //--------------------------------------------------
-
-                //Actualizando grafica de barras
-                x2.rangeBands([0, width], .02);
-
-                //linea del eje x
-                focus_barra.select('.line-bottom').attr("x2", width);
-
-                //Actualizando el eje y cuando se redimenciona la pantalla
-                focus_barra.select(".y.axis")
-                    .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
-
-                focus_barra.selectAll(".bar")
-                    .attr("x", function (d) {
-                        return x2(d.date);
-                    })
-                    .attr("width", x2.rangeBand());
-                //--------------------------------------------------
-
-                //Actualizando brush
-                x_brush.range([0, width]);
-                //xAxis_brush.ticks(Math.max((width / 50) - 10, 2));
-                xAxis_brush.ticks(5);
-
-                //Actualizando grafica de area
-                g_brush.select(".area")
-                    .attr("d", area);
-
-                //Actualizando eje x del brush
-                g_brush.select(".x_brush")
-                    .call(xAxis_brush);
-
-                brush.x(x_brush);
-                g_brush.select(".brush")
-                    .call(brush);
-
-                //----------------------------------------------------
-
-                if (self.comparando) {
-                    chart_container.select(".g-main").selectAll(".line.line-porciento")
-                        .attr("d", linea_porciento)
-                } else {
-                    //Actualizar lilnea
-                    chart_container.select(".g-main").select('.line-main')
-                        .attr("d", valueline);
-                }
-            }
-        }
-        ,
-
-        _m_iniciar_variables: function () {
-            this._m_crear_chart_header();
-            self.configuracion.width = self.configuracion.width - self.configuracion.margin.left - self.configuracion.margin.right;
-            self.configuracion.height = self.configuracion.height - self.configuracion.margin.top - self.configuracion.margin.bottom;
-            self.configuracion.margin2.realtop = self.configuracion.height + self.configuracion.margin2.top;
-            self.configuracion.margin3.realtop = self.configuracion.margin2.realtop + self.configuracion.margin3.top;
-
-            self.comparaciones["simbolos"] = [];
-            self.comparaciones["datos"] = [];
-            self.comparaciones["colores"] = [];
-            self.comparaciones["simbolos"].push(self.datos[0].titulo);
-            self.comparaciones["datos"].push([]);
-            self.comparaciones["colores"].push(self.datos[0].color);
-
-            chart_fecha_inicio = "";
-            chart_fecha_fin = "#chart_end";
-            animation_time = 750;
-            current_date_width = 100;
-            current_date_height = 25;
-
-            //Estas dos variables guardaran los objetos Datepicker dew inicio y fin respectivamente
-            chart_fecha_inicio = null;
-            chart_fecha_fin = null;
-            self._m_configurar_selector_de_fecha(self.datos[0].data[0].date, self.datos[0].data[self.datos[0].data.length - 1].date);
-
-            //Convierte un string en este formato a un objeto Date
-            parseDate = d3.time.format("%Y-%m-%d").parse;
-
-            // Convierte un objeto Date al formato "ano-mes-dia" Ex: 2015-02-27
-            formatFecha = d3.time.format("%Y-%m-%d");
-
-            // Convierte un objeto Date al formato "mes, dia, ano" Ex: Febrero, 03, 2015
-            formatDate = d3.time.format("%b %d, %Y");
-            bisectDate = d3.bisector(function (d) {
-                return d.date;
-            }).left;
-
-            // Escalando X and Y
-            x = d3.time.scale().range([0, self.configuracion.width]);
-            y = d3.scale.linear().range([self.configuracion.height, 0]);
-
-            //Scala para x y y de la grafica de barras
-            x2 = d3.scale.ordinal().rangeBands([0, self.configuracion.width], .02);
-            y2 = d3.scale.linear().range([0, self.configuracion.height2]);
-
-            //Esta se usa solo para la grafica que indica el eje y de la grafica de barras
-            y2_1 = d3.scale.linear().range([self.configuracion.height2, 0]);
-
-            // Eje X y Eje y
-            xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5);
-            yAxis = d3.svg.axis().scale(y).orient("right").ticks(5);
-
-            //Ejes para la grafica de barra
-            //xAxis2 = d3.svg.axis().scale(x2).orient("bottom").tickFormat(d3.time.format("%d"));
-            yAxis2 = d3.svg.axis().scale(y2_1).orient("right").ticks(3);
-
-            // Define que valores va a graficar la linea para cada eje
-            valueline = d3.svg.line()
-                .x(function (d) {
-                    return x(d.date);
-                })
-                .y(function (d) {
-                    return y(d.close);
-                });
-
-            //Datos para la grafica del brush
-            x_brush = d3.time.scale().range([0, self.configuracion.width]);
-            y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
-
-            xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom").ticks(5);
-
-            brush = d3.svg.brush().x(x_brush);
-
-            area = d3.svg.area()
-                .interpolate("monotone")
-                .x(function (d) {
-                    return x_brush(d.date);
-                })
-                .y0(self.configuracion.height3)
-                .y1(function (d) {
-                    return y_brush(d.close);
-                });
-        }
-        ,
-
-        _m_iniciar_elementos_dom: function () {
-            chart_container = d3.select(self.configuracion.id).append("div");
-            chart_container.attr("id", "main_chart_svg").attr("class", "main_chart_svg");
-
-            self._m_iniciar_variables();
-
-            //main_svg = chart_container
-            main_svg = d3.select("#main_chart_svg #chart-container")
-                .append("svg")
-                .attr("id", "chart_svg")
-                //.style("background", "#F0F6FD")
-                .attr("width", self.configuracion.width + self.configuracion.margin.left + self.configuracion.margin.right)
-                .attr("height", self.configuracion.height + self.configuracion.margin.top + self.configuracion.margin.bottom);
-
-            main_svg.append("defs").append("clipPath")
-                .attr("id", "clip")
-                .append("rect")
-                .attr("width", self.configuracion.width)
-                .attr("height", self.configuracion.height);
-
-            svg = main_svg
-                .append("g")
-                .attr("class", "g-main")
-                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin.top + ")");
-
-            // Grillas para el eje X
-            svg.append("g")
-                .attr("class", "grid x")
-                .attr("transform", "translate(0," + self.configuracion.height + ")");
-
-            // Grillas para el eje Y
-            svg.append("g")
-                .attr("class", "grid y");
-
-            //g para mostrar las lineas discontinuas cuando se mueve el mouse
-            focus = svg.append("g")
-                .attr("class", "focus")
-                .style("display", "none");
-
-            text_top_container = chart_container.select("#chart-container").append("div")
-                .attr("class", "text_top_container");
-
-            //text_top_container.append("div")
-            //    .attr("class", "titulo_top")
-            //    .text(self.configuracion.titulo);
-
-            var datosTop = [["titulo", self.configuracion.titulo], ["open", "Open: 0"], ["hight", "Hight: 0"], ["low", "Low: 0"], ["close", "Close: 0"], ["volume", "Volume: 0"], ["change", "Change: 0"]];
-            text_top_container.selectAll("textos")
-                .data(datosTop)
-                .enter()
-                .append("span")
-                .attr("class", "text_top")
-                .attr("id", function (d) {
-                    return d[0];
-                })
-                .text(function (d) {
-                    return d[1];
-                });
-
-            // TODO la 2 linea es para quitar la grafica de barras e ir probando el brush
-            focus_barra = main_svg.append("g")
-                //.style("display", "none") //temporal para probar la otra grafica dgfuentes
-                .attr("class", "focus_barra")
-                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin2.realtop + ")");
-
-            barras = focus_barra.append("g")
-                .attr("class", "rect_barras");
-
-            focus_barra.append("g")
-                .attr("class", "y axis")
-                .attr("transform", "translate(" + (self.configuracion.width) + ",0)");
-
-            focus_barra.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + self.configuracion.height2 + ")")
-                .append("line")
-                .attr("class", "line-bottom")
-                .attr("x1", "0")
-                .attr("x2", self.configuracion.width)
-                .style("stroke", "black")
-                .style("opacity", "1");
-
-            //Estableciendo el ancho de la grafica
-            var width = parseInt(d3.select("#chart-container").style("width")) - self.configuracion.margin.left - self.configuracion.margin.right;
-            self.configuracion.width = width;
-
-            //g contenedor del brush
-            g_brush = main_svg.append("g")
-                .attr("class", "g_brush")
-                .attr("transform", "translate(" + self.configuracion.margin.left + "," + self.configuracion.margin3.realtop + ")");
-
-            tooltip = d3.select("#chart-container").append('div')
-                .style('position', 'absolute')
-                .attr('class', 'tooltip-info');
-
-            tip_current_date = d3.select("#chart-container").append('div')
-                .attr('class', 'tip_current_date');
-
-            main_indicator_value = d3.select("#chart-container").append('div')
-                .attr('class', 'indicator main_indicator_value')
-                .style('background', self.datos[0].color);
-
-            main_indicator_default = d3.select("#chart-container").append('div')
-                .style("left", "-100px")
-                .attr('class', 'indicator main_indicator_default');
-        }
-        ,
-
-        _m_crear_chart_header: function () {
-
-            var header = '<div id="chart-global-header"><div class="chart-rangos btn-group"></div></div>';
-
-            chart_container.html(header);
-            chart_header = jQuery('#chart-global-header');
-
-            var rangos = d3.select(".chart-rangos");
-
-            rangos.selectAll("misbotones")
-                .data(self.periodos)
-                .enter()
-                .append("button")
-                .attr("class", function (p) {
-                    var clase = "m btn btn-default btn-md";
-                    return p.activo ? clase + " active" : clase
-                })
-                .attr("type", "button")
-                .attr("data-value", function (p) {
-                    return p.cantidad;
-                })
-                .attr("data-class", function (p) {
-                    return p.tipo;
-                })
-                .text(function (p) {
-                    return p.texto;
-                });
-
-            //Crear dropdown con las emrpesas, comenzando por 1
-            var LI = "";
-            for (var i = 1; i < self.datos.length; i++) {
-                var d = self.datos[i];
-                LI += '<li><a data-empresa="' + d.titulo + '" data-value="' + i + '" href="#" class="comparadores"> <span data-operacion="+" class="operacion">+</span>' + d.titulo + '</a></li>';
-            }
-
-            var btnDropdown = '<div class="btn-group form-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
-                'Comparar<span class="caret"></span></button><ul class="dropdown-menu comparar">' + LI + '</ul></div>';
-
-            var indicadores = [{nombre: 'Indicador A', simbolo: 'A'}, {
-                nombre: 'Indicador B',
-                simbolo: 'B'
-            }, {nombre: 'Indicador C', simbolo: 'C'}];
-            var Li_indicadores = "";
-            for (var pos = 0; pos < indicadores.length; pos++) {
-                var ind = indicadores[pos];
-                Li_indicadores += '<li><a data-indicador="' + ind.simbolo + '" data-value="' + ind.nombre + '" href="#" class="indicador"> <span data-operacion="+" class="operacion">+</span>' + ind.nombre + '</a></li>';
-            }
-            var btnIndicadores = '<div class="form-group"> <button data-toggle="dropdown" class="btn btn-default dropdown-toggle" type="button">' +
-                'Indicadores<span class="caret"></span></button><ul class="dropdown-menu">' + Li_indicadores + '</ul></div>';
-
-            var btnReiniciar = '<div class="form-group"> <button id="btn_reiniciar" class="btn btn-default" type="button">Reiniciar</button></div>';
-            var btnReiniciar1 = '<div class="form-group"> <button id="btn_reiniciar1" class="chart-btn" type="button">TEST</button></div>';
-            var input_fecha_inicio = '<div class="form-group"><input type="text" placeholder="Desde" name="inicio" id="chart_start" class="form-control"></div>';
-            var input_fecha_fin = '<div class="form-group"><input type="text" placeholder="Hasta" name="fin" id="chart_end" class="form-control"></div>';
-
-            var contenedor_fecha =
-                '<div class="parametros">' +
-                '<div class="todos">' +
-                input_fecha_inicio + input_fecha_fin + btnDropdown + btnReiniciar +
-                '<div class="clearfix"></div>' +
-                '</div>' +
-                '</div>' +
-                '<div class="clearfix"></div>';
-            chart_header.html(chart_header.html() + contenedor_fecha);
-            chart_container.html(chart_container.html() + '<div id="chart-container">' + _crear_leyenda() + '</div>');
-
-            //Crear leyenda
-            function _crear_leyenda() {
-                return '<div class="leyenda"><div class="wrapper"></div></div>';
             }
         }
         ,
@@ -1871,7 +1883,6 @@ if (typeof Object.create !== 'function') {
         }
 
     };
-
 
     function formato_numero(numero, decimales, separador_decimal, separador_miles) {
 

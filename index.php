@@ -35,12 +35,12 @@
             texto: "5D",
             cantidad: 5,
             tipo: "dia",
-            activo: false
+            activo: true
         }, {
             texto: "10D",
             cantidad: 10,
             tipo: "dia",
-            activo: true
+            activo: false
         }, {
             texto: "1M",
             cantidad: 1,
@@ -77,9 +77,9 @@
     var datos;
 
     jQuery(document).ready(function () {
-        Modo_Produccion(periodos);
-//        Modo_Desarrollo(periodos);
-        //Modo_Test(periodos);
+//        Modo_Produccion(periodos);
+        Modo_Desarrollo(periodos);
+//        Modo_Test(periodos);
     });
 
     function generar_datos_aleatorios(cantidad_elementos) {
