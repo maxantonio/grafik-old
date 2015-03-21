@@ -17,8 +17,8 @@ if (typeof Object.create !== 'function') {
             height: 560, // alto de la grafica de linea
             margin: {top: 5, right: 80, bottom: 150, left: 52},
 
-            height2: 50, // alto de la grafica de barra
-            margin2: {top: 45, realtop: 0, bottom: 0},
+            height2: 55, // alto de la grafica de barra
+            margin2: {top: 40, realtop: 0, bottom: 0},
 
             margin3: {top: 1, realtop: 0, bottom: 0},
             height3: 1, // alto del brush
@@ -413,13 +413,97 @@ if (typeof Object.create !== 'function') {
                 .html(ultimo_valor.close);
         },
 
+        _m_iniciar_variables: function () {
+            this._m_crear_chart_header();
+            self.configuracion.width = self.configuracion.width - self.configuracion.margin.left - self.configuracion.margin.right;
+            self.configuracion.height = self.configuracion.height - self.configuracion.margin.top - self.configuracion.margin.bottom;
+            self.configuracion.margin2.realtop = self.configuracion.height + self.configuracion.margin2.top;
+            self.configuracion.margin3.realtop = self.configuracion.margin2.realtop + self.configuracion.margin3.top;
+
+            self.comparaciones["simbolos"] = [];
+            self.comparaciones["datos"] = [];
+            self.comparaciones["colores"] = [];
+            self.comparaciones["simbolos"].push(self.datos[0].titulo);
+            self.comparaciones["datos"].push([]);
+            self.comparaciones["colores"].push(self.datos[0].color);
+
+            chart_fecha_inicio = "";
+            chart_fecha_fin = "#chart_end";
+            animation_time = 750;
+            current_date_width = 100;
+            current_date_height = 25;
+
+            //Estas dos variables guardaran los objetos Datepicker dew inicio y fin respectivamente
+            chart_fecha_inicio = null;
+            chart_fecha_fin = null;
+            self._m_configurar_selector_de_fecha(self.datos[0].data[0].date, self.datos[0].data[self.datos[0].data.length - 1].date);
+
+            //Convierte un string en este formato a un objeto Date
+            parseDate = d3.time.format("%Y-%m-%d").parse;
+
+            // Convierte un objeto Date al formato "ano-mes-dia" Ex: 2015-02-27
+            formatFecha = d3.time.format("%Y-%m-%d");
+
+            // Convierte un objeto Date al formato "mes, dia, ano" Ex: Febrero, 03, 2015
+            formatDate = d3.time.format("%b %d, %Y");
+            bisectDate = d3.bisector(function (d) {
+                return d.date;
+            }).left;
+
+            // Escalando X and Y
+            x = d3.time.scale().range([0, self.configuracion.width]);
+            y = d3.scale.linear().range([self.configuracion.height, 0]);
+
+            //Scala para x y y de la grafica de barras
+            x2 = d3.scale.ordinal().rangeBands([0, self.configuracion.width], .02);
+            y2 = d3.scale.linear().range([0, self.configuracion.height2]);
+
+            //Esta se usa solo para la grafica que indica el eje y de la grafica de barras
+            y2_1 = d3.scale.linear().range([self.configuracion.height2, 0]);
+
+            // Eje X y Eje y
+            xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5);
+            yAxis = d3.svg.axis().scale(y).orient("right").ticks(5);
+
+            //Ejes para la grafica de barra
+            //xAxis2 = d3.svg.axis().scale(x2).orient("bottom").tickFormat(d3.time.format("%d"));
+            yAxis2 = d3.svg.axis().scale(y2_1).orient("right").ticks(3);
+
+            // Define que valores va a graficar la linea para cada eje
+            valueline = d3.svg.line()
+                .x(function (d) {
+                    return x(d.date);
+                })
+                .y(function (d) {
+                    return y(d.close);
+                });
+
+            ////Datos para la grafica del brush
+            //x_brush = d3.time.scale().range([0, self.configuracion.width]);
+            //y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
+            //
+            //xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom").ticks(5);
+            //
+            //brush = d3.svg.brush().x(x_brush);
+            //
+            //area = d3.svg.area()
+            //    .interpolate("monotone")
+            //    .x(function (d) {
+            //        return x_brush(d.date);
+            //    })
+            //    .y0(self.configuracion.height3)
+            //    .y1(function (d) {
+            //        return y_brush(d.close);
+            //    });
+        }
+        ,
+
         _m_iniciar_elementos_dom: function () {
             chart_container = d3.select(self.configuracion.id).append("div");
             chart_container.attr("id", "main_chart_svg").attr("class", "main_chart_svg");
 
             self._m_iniciar_variables();
 
-            //main_svg = chart_container
             main_svg = d3.select("#main_chart_svg #chart-container")
                 .append("svg")
                 .attr("id", "chart_svg")
@@ -589,91 +673,6 @@ if (typeof Object.create !== 'function') {
             function _crear_leyenda() {
                 return '<div class="leyenda"><div class="wrapper"></div></div>';
             }
-        }
-        ,
-
-        _m_iniciar_variables: function () {
-            this._m_crear_chart_header();
-            self.configuracion.width = self.configuracion.width - self.configuracion.margin.left - self.configuracion.margin.right;
-            self.configuracion.height = self.configuracion.height - self.configuracion.margin.top - self.configuracion.margin.bottom;
-            self.configuracion.margin2.realtop = self.configuracion.height + self.configuracion.margin2.top;
-            self.configuracion.margin3.realtop = self.configuracion.margin2.realtop + self.configuracion.margin3.top;
-
-            self.comparaciones["simbolos"] = [];
-            self.comparaciones["datos"] = [];
-            self.comparaciones["colores"] = [];
-            self.comparaciones["simbolos"].push(self.datos[0].titulo);
-            self.comparaciones["datos"].push([]);
-            self.comparaciones["colores"].push(self.datos[0].color);
-
-            chart_fecha_inicio = "";
-            chart_fecha_fin = "#chart_end";
-            animation_time = 750;
-            current_date_width = 100;
-            current_date_height = 25;
-
-            //Estas dos variables guardaran los objetos Datepicker dew inicio y fin respectivamente
-            chart_fecha_inicio = null;
-            chart_fecha_fin = null;
-            self._m_configurar_selector_de_fecha(self.datos[0].data[0].date, self.datos[0].data[self.datos[0].data.length - 1].date);
-
-            //Convierte un string en este formato a un objeto Date
-            parseDate = d3.time.format("%Y-%m-%d").parse;
-
-            // Convierte un objeto Date al formato "ano-mes-dia" Ex: 2015-02-27
-            formatFecha = d3.time.format("%Y-%m-%d");
-
-            // Convierte un objeto Date al formato "mes, dia, ano" Ex: Febrero, 03, 2015
-            formatDate = d3.time.format("%b %d, %Y");
-            bisectDate = d3.bisector(function (d) {
-                return d.date;
-            }).left;
-
-            // Escalando X and Y
-            x = d3.time.scale().range([0, self.configuracion.width]);
-            y = d3.scale.linear().range([self.configuracion.height, 0]);
-
-            //Scala para x y y de la grafica de barras
-            x2 = d3.scale.ordinal().rangeBands([0, self.configuracion.width], .02);
-            y2 = d3.scale.linear().range([0, self.configuracion.height2]);
-
-            //Esta se usa solo para la grafica que indica el eje y de la grafica de barras
-            y2_1 = d3.scale.linear().range([self.configuracion.height2, 0]);
-
-            // Eje X y Eje y
-            xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5);
-            yAxis = d3.svg.axis().scale(y).orient("right").ticks(5);
-
-            //Ejes para la grafica de barra
-            //xAxis2 = d3.svg.axis().scale(x2).orient("bottom").tickFormat(d3.time.format("%d"));
-            yAxis2 = d3.svg.axis().scale(y2_1).orient("right").ticks(3);
-
-            // Define que valores va a graficar la linea para cada eje
-            valueline = d3.svg.line()
-                .x(function (d) {
-                    return x(d.date);
-                })
-                .y(function (d) {
-                    return y(d.close);
-                });
-
-            ////Datos para la grafica del brush
-            //x_brush = d3.time.scale().range([0, self.configuracion.width]);
-            //y_brush = d3.scale.linear().range([self.configuracion.height3, 0]);
-            //
-            //xAxis_brush = d3.svg.axis().scale(x_brush).orient("bottom").ticks(5);
-            //
-            //brush = d3.svg.brush().x(x_brush);
-            //
-            //area = d3.svg.area()
-            //    .interpolate("monotone")
-            //    .x(function (d) {
-            //        return x_brush(d.date);
-            //    })
-            //    .y0(self.configuracion.height3)
-            //    .y1(function (d) {
-            //        return y_brush(d.close);
-            //    });
         }
         ,
 
@@ -970,10 +969,11 @@ if (typeof Object.create !== 'function') {
             data.forEach(function (d, i) {
                 var tempValue = +data[i].close;
                 var t = (tempValue / baseValue) - 1;
+                var close = +d.close;
                 self.comparaciones["datos"][pos].push({
                     porciento: +t.toFixed(2), //redondeo a 2 lugares
                     date: d.date,
-                    close: d.close
+                    close: +close.toFixed(2)
                 });
             });
         },
@@ -988,7 +988,7 @@ if (typeof Object.create !== 'function') {
                 self.comparaciones["datos"][0].push({
                     porciento: +t.toFixed(2), //redondeo a 2 lugares
                     date: d.date,
-                    close: d.close
+                    close: +d.close.toFixed(2)
                 });
             });
         },
@@ -1513,8 +1513,9 @@ if (typeof Object.create !== 'function') {
                 var result = [];
                 if (i == 0) {
                     data.forEach(function (d) {
+                        var close = +d.value;
                         result.push({
-                            close: +d.value,
+                            close: +close.toFixed(2),
                             date: parseDate(d.date),
                             volume: +d.volume,
                             open: +d.open,
@@ -1524,8 +1525,9 @@ if (typeof Object.create !== 'function') {
                     });
                 } else {
                     data.forEach(function (d) {
+                        var close = +d.value;
                         result.push({
-                            close: +d.value,
+                            close: +close.toFixed(2),
                             date: parseDate(d.date),
                             volume: +d.volume
                         });

@@ -30,7 +30,7 @@
             texto: "2D",
             cantidad: 2,
             tipo: "dia",
-            activo: true
+            activo: false
         }, {
             texto: "5D",
             cantidad: 5,
@@ -45,7 +45,7 @@
             texto: "1M",
             cantidad: 1,
             tipo: "mes",
-            activo: false
+            activo: true
         }, {
             texto: "3M",
             cantidad: 3,
@@ -77,8 +77,8 @@
     var datos;
 
     jQuery(document).ready(function () {
-//        Modo_Produccion(periodos);
-        Modo_Desarrollo(periodos);
+        Modo_Produccion(periodos);
+//        Modo_Desarrollo(periodos);
 //        Modo_Test(periodos);
     });
 
