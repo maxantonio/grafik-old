@@ -1,6 +1,13 @@
 # Gráficas Financieras.
 Esta simple librería está basada en d3js y tiene como propósito crear gráficas financieras.
 
+
+## Funcionamiento de la gráfica a grandes rasgos.
+1. Obtener los datos que se desean graficar.
+2. Crear los elementos del DOM como son los svg, line, path, g, etc.
+3. Graficar los datos.
+
+
 ## Ejemplo de como crear una gráfica:
  
  <!DOCTYPE html>
