@@ -77,8 +77,8 @@
     var datos;
 
     jQuery(document).ready(function () {
-        Modo_Produccion(periodos);
-//        Modo_Desarrollo(periodos);
+//        Modo_Produccion(periodos);
+        Modo_Desarrollo(periodos);
 //        Modo_Test(periodos);
     });
 
@@ -158,7 +158,7 @@
         ];
 
         chart.datos = datos;
-        chart.periodos = periodos;
+        //chart.periodos = periodos;
         chart.m_graficar();
     }
 
