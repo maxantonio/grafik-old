@@ -1,16 +1,15 @@
-# Gr·ficas Financieras.
-Esta simple librerÌa est· basada en d3js y tiene como propÛsito principal crear gr·ficas financieras.
+Gr√°ficas Financieras.
+=====================
+
+Esta simple librer√≠a est√° basada en [d3js.org](https://github.com/mbostock/d3) y tiene como prop√≥sito principal crear gr√°ficas financieras.
 
 
-## Funcionamiento de la gr·fica a grandes rasgos.
-1. Obtener y validar los datos que se desean graficar.
-2. Crear los elementos del DOM como son los svg, line, path, g, etc.
-3. Graficar los datos.
+## Iniciando con la librer√≠a
 
+Para un correcto funcionamiento se deben seguir los siguientes pasos.
 
-## øCÛmo crear una gr·fica financiera?
-
-1. Incluir los css y js	
+1. **Incluir en nuestra p√°gina estos ficheros css y js :+1:**
+    ```html
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/jquery-ui.css">
     <link rel="stylesheet" href="css/grafica.css">
@@ -19,38 +18,122 @@ Esta simple librerÌa est· basada en d3js y tiene como propÛsito principal crear 
     <script src="js/bootstrap.min.js"></script>
     <script src="js/d3.v3.min.js" charset="utf-8"></script>
     <script src="js/grafica.js"></script>
+    ```
 
-2. Dentro de la p·gina, debes tener al menos un 'div' con id donde deseas que salga la gr·fica.
-Ejemplo: <div id='grafica'></div>
+2. Dentro de la p√°gina, debes existir el div donde queremos que salga la librer√≠a con la propiedad id definida como se muestra en el siguiente ejemplo.
+:+1:
+```html 
+<div id='grafica'></div>
+```
 
-3. Crear la gr·fica.
-Para crear la gr·fica, necesitamos crear un objeto de tipo Grafica y pararle las opciones de configuracion como se muestra en el ejemplo
+3. Inicializar la gr√°fica.
+ 	* Necesitamos crear un objeto de tipo **Grafica** y pararle las opciones de configuraci√≥n como se muestra en el ejemplo :+1:
 	
+```javascript
 var config_general = {
 	id: '#grafica'
 }
 var chart = new Grafica(config_general);
+```
 
-## ConfiguraciÛn por defecto
+## Estructuras
 	
-	### Estructura de los periodos	
-        
-		{		
-            tipo: "dia", // tipo de periodo			
-            cantidad: 2, // tiempo en dependencia del tipo
-            activo: false // si esta activo o no
-			texto: "2D", // texto que se va a mostrar
+### Periodos
+Representan los intervalos de fechas predefinidos por el usuario para mejor an√°lisis de los datos que se est√°n graficando.
+
+``` javascript
+{		
+  tipo: "dia", // tipo de periodo			
+  cantidad: 2, // tiempo en dependencia del tipo
+  activo: false // si esta activo o no
+  texto: "2D", // texto que se va a mostrar
+}
+```
+#### Tipos de periodos permitidos
+```'dia', 'mes', 'anno'```
+		
+**Nota:** Solo estar√° activo uno a la vez.
+
+#### Periodos por defecto
+``` javascript		 
+        {
+            texto: "2D",
+            cantidad: 2,
+            tipo: "dia",
+            activo: false
+        }, {
+            texto: "5D",
+            cantidad: 5,
+            tipo: "dia",
+            activo: false
+        }, {
+            texto: "10D",
+            cantidad: 10,
+            tipo: "dia",
+            activo: false
+        }, {
+            texto: "1M",
+            cantidad: 1,
+            tipo: "mes",
+            activo: true
+        }, {
+            texto: "3M",
+            cantidad: 3,
+            tipo: "mes",
+            activo: false
+        }, {
+            texto: "6M",
+            cantidad: 6,
+            tipo: "mes",
+            activo: false
+        }, {
+            texto: "YTD",
+            cantidad: 0,
+            tipo: "hasta_la_fecha",
+            activo: false
+        }, {
+            texto: "1Y",
+            cantidad: 1,
+            tipo: "anno",
+            activo: false
+        },
+        {
+            texto: "2Y",
+            cantidad: 2,
+            tipo: "anno",
+            activo: false
         }
-		
-		**Nota:** Solo va a estar activo 1 periodo a la vez. Al mostrar la grafica por primera vez, siempre se van a graficar los
-		datos correspondientes a el periodo que estÈ activo.(activo: true);
-		
-		#### Tipos de periodos permitidos
-			'dia', 'mes', 'anno'
-		
-		##### Valor por defecto
-		
-		 var periodos = [
+```
+
+### Estructura de los Datos
+``` javascript
+{
+  titulo: "MAXCOM", // Identificador
+  data: [....], // datos a graficar
+  color: "red" //color de la grafica para IPC
+},
+{
+  titulo: "IPC", 
+  data: [...], 
+  color: '#FFFFF' // tambi√©n se pueden especificar los colores as√≠.
+}
+```
+**Nota:** Si no se especifica el color, se tomaran colores por defecto teniendo en cuenta la [escala de 10 colores de d3js](https://github.com/mbostock/d3/wiki/Ordinal-Scales#category10). El identificador debe ser **√∫nico.**
+ 
+## Ejemplo de una gr√°fica financiera usando esta librer√≠a.
+
+```javascript
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<div id="grafica"></div>
+     
+    <script type="text/javascript">    
+    var chart = new Grafica({id: "#grafica"});    
+    var periodos = [
         {
             texto: "2D",
             cantidad: 2,
@@ -99,27 +182,29 @@ var chart = new Grafica(config_general);
             activo: false
         }
     ];
-	
-	var chart = new Grafica(config_general);
-	chart.periodos = periodos;
-	
-	### Estructura de los Datos
-	
-	var datos = [
-            {
-                titulo: "MAXCOM", // Identificador
-                data: [....], // datos a graficar
-				color: "red" //color de la grafica para IPC
-            },
-            {
-                titulo: "IPC", 
-                data: [...], 
-				color: '#FFFFF' // tambiÈn se pueden especificar los colores asÌ.
-            }
-			];
-		
-		var chart = new Grafica(config_general);
-		chart.datos = datos;
-		
-		**Nota:** El identificador debe ser ˙nico. En caso de no especificar los colores, se tomaran los colores por defecto, 
-		que son una escala de 10 colores de d3.
+    
+var uno = '[{"date":"2013-01-02","open":"3.88","low":"3.79","hight":"3.9","value":"3.84","volume":515500},{"date":"2013-01-03","open":"3.8","low":"3.79","hight":"3.89","value":"3.83","volume":749400}]';
+
+var dos = '[{"date":"2013-01-02","value":"44304.17","volume":176170000},{"date":"2013-01-03","value":"44370.64","volume":231461200}]';
+ 
+ var datos = [
+   {
+     titulo: "MAXCOM",
+     data: JSON.parse(uno),
+     color: 'blue'
+   },
+   {
+     titulo: "IPC",
+     data: JSON.parse(dos),
+     color: 'red'
+   }
+ ];
+
+chart.datos = datos;
+chart.periodos = periodos;
+chart.m_graficar();
+</script>
+
+</body>
+</html>
+```
