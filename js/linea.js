@@ -9,10 +9,9 @@ if (typeof Object.create !== 'function') {
 
 (function () {
     var mi_line = {
-
+        //var rootElement="", //id del div donde va a salir la grafica
         //Propiedades por defecto en caso de que no se especifiquen
         default_options: {
-            id: "",
             showgridLines: true,
             gridLines: {color: 'lightgrey', showHorizontal: true, showVertical: true},
             fontFamily: "Arial",// la Fuente
@@ -62,15 +61,19 @@ if (typeof Object.create !== 'function') {
             }
         }
         ,
-        DrawData: function () {
+        Dibujar: function () {
+            if (self._m_ValidData()) {
+                //graficar
+            } else {
+                throw new Error("Formato de los datos incorrectos.");
+            }
+        }
+        ,
+        Actualizar: function (data) {
 
         }
         ,
-        Update: function (data) {
-
-        }
-        ,
-        _m_validarDatos: function () {
+        _m_ValidData: function () {
             return true;
         }
         ,
@@ -85,3 +88,21 @@ if (typeof Object.create !== 'function') {
         return Object.create(mi_line).init(options);
     };
 })();
+
+//
+//
+//var Clase = function(parametro) {
+//    var atributoPrivado = parametro;
+//    var metodoPrivado = function(parametro) {
+//        alert(parametro);
+//    };
+////Poniendole el _ delante del nombre del método también estamos diciendo que         este es privado.
+//    _metodoPrivado2 = function() {
+//        alert('Metodo privado 2');
+//    };
+//
+//    this.llamaTodo = function() {
+//        metodoPrivado('hola');
+//        console.log(atributoPrivado);
+//    }
+//};
