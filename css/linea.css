@@ -2,6 +2,7 @@ body { font: 12px Arial;}
 
 path {
     stroke: steelblue;
+    /*stroke: rgba(51, 204, 204, 0.56);*/
     stroke-width: 2;
     fill: none;
 }
