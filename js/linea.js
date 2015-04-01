@@ -3,7 +3,7 @@
 
     LineChart = function (raiz, opciones) {
 
-        //Definicion de las variables
+        // ----------------------------- Definicion de las variables publicas--------------------
         self = this;
         self.raiz = raiz;
         self.opciones = opciones;
@@ -85,13 +85,24 @@
         self.titulo = "LineChart by IRStrat";
         self.datos = []; // Datos a graficar
         self.periodos = []; //Periodos personalizados
+
+        //--------------------- Variables privadas aqui--------------------------
+
+        var margin = {top: 20, right: 10, bottom: 20, left: 10};
+        var width = 480 - margin.left - margin.right, height = 250 - margin.top - margin.bottom;
+
         var colors = d3.scale.category10();//escala de 10 colores de d3
         var parseDate = d3.time.format("%d-%b-%y").parse; //Formato por defecto de la fecha
+        var formatFecha, formatDate,valueline;
+        var x, y, xAxis, yAxis;
+        var current_data; //representa los datos que se estan graficando actualemte
 
+
+        //Mezcla las opciones con las que pasa el usuario
+        //Inicializa las variables y los elementos del DOM
         _init = function () {
-
             self.opciones = my_extend(self.default_options, self.opciones);
-
+            _inicializarDOM_y_Variables();
             function my_extend(options1, options2) {
                 for (var key1 in options1)
                     for (var key2 in options2)
@@ -101,10 +112,8 @@
             }
         };
 
-        //Llama a este metodo para inicializar las opciones de configuracion que sepasaron por parametro
-        _init();
 
-        graficar = function () {
+        self.graficar = function () {
             if (_DatosCorrectos()) {
 
             } else {
@@ -117,11 +126,63 @@
         };
 
         //Inicializa el SVG, y todos los elementos necesarios para crear la grafica
-        _inicializarDOM = function () {
+        _inicializarDOM_y_Variables = function () {
 
+            Inicializar_Variables();
+
+            svg = d3.select("#" + self.raiz)
+                .append("svg")
+                .attr("id", "chart-svg")
+                .style("background", "#F0F6FD")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            svg.append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
             function Inicializar_Variables() {
+                var periodHeight = 30; //alto de los periodos
+                margin.top = margin.top + periodHeight;
+                formatFecha = d3.time.format("%Y-%m-%d");
 
+                //Escala para eje X and Y
+                x = d3.time.scale().range([0, width]);
+                y = d3.scale.linear().range([height, 0]);
+
+                //Eje X and Y
+                xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(5);
+                yAxis = d3.svg.axis().scale(y).orient("left").ticks(5);
+
+                // Define que valores va a graficar la linea para cada eje
+                valueline = d3.svg.line()
+                    .x(function (d) {
+                        return x(d.date);
+                    })
+                    .y(function (d) {
+                        return y(d.close);
+                    });
+            }
+
+            //Crear los periodos
+            function crearPeriodos() {
+
+                /*var rangos = d3.select(".chart-rangos");
+
+                 rangos.selectAll("misbotones")
+                 .data(self.periodos)
+                 .enter()
+                 .append("button")
+                 .attr("class", "m btn btn-primary btn-md")
+                 .attr("type", "button")
+                 .attr("data-value", function (p) {
+                 return p.cantidad;
+                 })
+                 .attr("data-class", function (p) {
+                 return p.tipo;
+                 })
+                 .text(function (p) {
+                 return p.texto;
+                 });*/
             }
         };
 
@@ -133,7 +194,8 @@
 
         };
 
-
+        //Llama a este metodo para inicializar las opciones de configuracion que sepasaron por parametro
+        _init();
     };
 
 //Fin de la libreria
