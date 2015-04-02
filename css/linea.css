@@ -1,16 +1,43 @@
-body { font: 12px Arial;}
+body {
+    font: 12px Arial;
+}
 
+/*------------------------------------------------------- Css para la linea ----------------------------- */
 path {
-    stroke: steelblue;
+    /*stroke: steelblue;*/
     /*stroke: rgba(51, 204, 204, 0.56);*/
-    stroke-width: 2;
+    /*stroke-width: 2;*/
     fill: none;
 }
 
+/*------------------------------------------------------- CSS para los ejes ----------------------------- */
 .axis path,
 .axis line {
     fill: none;
-    stroke: grey;
+    stroke: black;
     stroke-width: 1;
     shape-rendering: crispEdges;
+}
+
+/*------------------------------------------------------- CSS para las grillas ----------------------------- */
+.grid .tick {
+    stroke: lightgrey;
+    stroke-opacity: 0.7;
+    shape-rendering: crispEdges;
+}
+
+.grid path {
+    stroke-width: 0;
+}
+
+/*------------------------------------------------------- CSS para area debajo de la grafica ----------------------------- */
+.area {
+    fill: lightsteelblue;
+    stroke-width: 0;
+    fill-opacity: 0.5;
+}
+
+/*------------------------------------------------------- CSS para los puntos de interseccion ----------------------------- */
+circle.mark {
+
 }

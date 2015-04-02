@@ -16,7 +16,12 @@
 <script type="text/javascript">
 
 
-    var opciones = {};
+    var opciones = {
+        showArea: false,
+        dateFormat: '%b - %d',
+        ticks: {x: 10, y: 6, gridX: 5, gridY: 6},
+        showPoint: false,
+    };
     var linea = new LineChart("chart", opciones);
     Modo_Desarrollo();
 
@@ -33,6 +38,7 @@
             d.close = +d.close;
             d.volume = +d.volume;
         });
+
 
         var datos = [
             {
