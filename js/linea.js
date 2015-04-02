@@ -36,52 +36,42 @@
                     texto: "1D",
                     cantidad: 1,
                     tipo: "dia",
-                    seleccionado: true
+                    activo: true
                 }, {
                     texto: "5D",
                     cantidad: 5,
                     tipo: "dia",
-                    seleccionado: false
+                    activo: false
                 }, {
-                    texto: "1m",
+                    texto: "1M",
                     cantidad: 1,
                     tipo: "mes",
-                    seleccionado: false
+                    activo: false
                 }, {
-                    texto: "3m",
+                    texto: "3M",
                     cantidad: 3,
                     tipo: "mes",
-                    seleccionado: false
+                    activo: false
                 }, {
-                    texto: "6m",
+                    texto: "6M",
                     cantidad: 6,
                     tipo: "mes",
-                    seleccionado: false
+                    activo: false
                 }, {
                     texto: "YTD",
                     cantidad: 0,
                     tipo: "hasta_la_fecha",
-                    seleccionado: false
+                    activo: false
                 }, {
-                    texto: "1y",
+                    texto: "1Y",
                     cantidad: 1,
                     tipo: "anno",
-                    seleccionado: false
+                    activo: false
                 }, {
-                    texto: "2y",
+                    texto: "2Y",
                     cantidad: 2,
                     tipo: "anno",
-                    seleccionado: false
-                }, {
-                    texto: "5y",
-                    cantidad: 5,
-                    tipo: "anno",
-                    seleccionado: false
-                }, {
-                    texto: "10y",
-                    cantidad: 10,
-                    tipo: "anno",
-                    seleccionado: false
+                    activo: false
                 }
             ],
 
@@ -111,8 +101,8 @@
         var margin = {top: 5, right: 0, bottom: 25, left: 30};
         var width = 800 - margin.left - margin.right, height = 400 - margin.top - margin.bottom;
 
-        var colors = d3.scale.category10();//escala de 10 colores de d3
-        var parseDate = d3.time.format("%d-%b-%y").parse; //Formato por defecto de la fecha
+        var colors;
+        var parseDate;
         var formatFecha, formatDate, valueline;
         var x, y, xAxis, yAxis;
         var current_data; //representa los datos que se estan graficando actualemte
@@ -127,7 +117,7 @@
         //Inicializa las variables y los elementos del DOM
         _init = function () {
             self.opciones = my_extend(self.default_options, self.opciones);
-            _inicializarDOM_y_Variables();
+            _inicializarDOM_Variables_y_Eventos();
             function my_extend(options1, options2) {
                 for (var key1 in options1)
                     for (var key2 in options2)
@@ -138,8 +128,11 @@
         };
 
 
+        //TODO METODO GRAFICAR
         self.graficar = function () {
             if (_DatosCorrectos()) {
+
+                current_data = self.datos;
 
                 var data = self.datos[0].data;
 
@@ -152,8 +145,6 @@
                 var min_max = d3.extent(data, function (d) {
                     return d.close;
                 });
-
-                console.info(min_max);
 
                 //valor para agregarle a cada limite de la grafica en el eje Y
                 //Esto es para que no quede tan pegada a los limites de la grafica la linea que se dibuja
@@ -199,6 +190,8 @@
                     g_main.append("path")
                         .datum(data)
                         .attr("class", "area")
+                        .style("fill", self.default_options.area.color)
+                        .style("fill-opacity", +self.default_options.area.opacity)
                         .attr("d", area);
                 }
 
@@ -207,8 +200,12 @@
                     .datum(data)
                     .attr("clip-path", "url(#clip)")
                     .attr("class", "line line-main")
-                    .attr("stroke", colors(3))
-                    .attr("stroke-width", 2)
+                    .attr("stroke", function (d, i) {
+                        return colors(i)
+                    })
+                    //.attr("stroke", "#FF0066") rojo
+                    //.attr("stroke", "#ff7f0e")
+                    .attr("stroke-width", 1)
                     .attr("d", valueline);
 
                 //  Adiciona el Eje Y
@@ -253,34 +250,37 @@
         };
 
         //Inicializa el SVG, y todos los elementos necesarios para crear la grafica
-        _inicializarDOM_y_Variables = function () {
+        _inicializarDOM_Variables_y_Eventos = function () {
 
             Inicializar_Variables();
 
-            //Inicializando elemento raiz con sus propiedades
+
+            //TODO Inicializando elemento raiz con sus propiedades
             var realWidth = width + margin.left + margin.right;
             d3.select("#" + self.raiz)
                 .style("max-width", realWidth + 'px')
                 .style('width', '100%');
 
+            // TODO Crear los periodos
             if (self.default_options.showPeriod) {
                 var periodos_grafica = d3.select("#" + self.raiz)
                     .append('div')
                     .attr('id', 'chart-periodos')
                     .attr('class', 'chart-periodos-container')
-                    .style('background', '#33CCCC')
+                    //.style('background', '#33CCCC')
+                    .style('border', "1px solid #33CCCC")
                     .style('height', periodHeight + 'px');
 
                 var periodos = periodos_grafica.append('div')
-                    .attr('class','periodos');
+                    .attr('class', 'periodos');
 
                 periodos.selectAll("misbotones")
                     .data(self.periodos)
                     .enter()
                     .append("button")
                     .attr("class", function (p) {
-                        var clase = "btn-p btn-periodo";
-                        return p.activo ? clase + " active" : clase
+                        var clase = "btn_p btn_periodo";
+                        return p.activo ? clase + " btn-active" : clase
                     })
                     .attr("type", "button")
                     .attr("data-value", function (p) {
@@ -293,27 +293,23 @@
                         return p.texto;
                     });
 
+                //Inicializa los click en los periodos
+                _click_periodos();
 
-                //var rangos = d3.select(".chart-rangos");
-                //
-                //rangos.selectAll("misbotones")
-                //    .data(self.periodos)
-                //    .enter()
-                //    .append("button")
-                //    .attr("class", function (p) {
-                //        var clase = "m btn btn-default btn-md";
-                //        return p.activo ? clase + " active" : clase
-                //    })
-                //    .attr("type", "button")
-                //    .attr("data-value", function (p) {
-                //        return p.cantidad;
-                //    })
-                //    .attr("data-class", function (p) {
-                //        return p.tipo;
-                //    })
-                //    .text(function (p) {
-                //        return p.texto;
-                //    });
+                var date_container = periodos_grafica.append('div')
+                    .attr('class', 'date-container');
+
+                //TODO Ponerle los eventos keypress a los input
+                date_container
+                    .append('input')
+                    .attr('class', 'chart-input chart_start_date')
+                    .attr('placeholder', '02-05-2010');
+
+                date_container
+                    .append('input')
+                    .attr('class', 'chart-input chart_end_date');
+
+
             }
 
             //Creando el SVG
@@ -327,7 +323,6 @@
                 //.style("background", "rgba(51, 204, 204, 0.20)")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom);
-
 
             g_main = svg.append("g")
                 .attr('class', 'g_main')
@@ -347,10 +342,13 @@
                 self.periodos = self.default_options.periodos;
                 periodHeight = 30; //height de los periodos
 
-                //if (self.default_options.showPeriod)
-                // margin.top = margin.top + periodHeight;
-
+                //Para formatear Fechas a este formato
                 formatFecha = d3.time.format("%Y-%m-%d");
+
+                colors = d3.scale.category10();//escala de 10 colores de d3
+
+                //Formato que viene la escala de tiempo en los datos
+                parseDate = d3.time.format("%Y-%m-%d").parse;
 
                 //Escala para eje X and Y
                 x = d3.time.scale().range([0, width]);
@@ -376,6 +374,7 @@
 
                 // Define que valores va a graficar la linea para cada eje
                 valueline = d3.svg.line()
+                    .interpolate('monotone')
                     .x(function (d) {
                         return x(d.date);
                     })
@@ -387,36 +386,37 @@
 
             }
 
-            //Crear los periodos
-            function crearPeriodos() {
-
-                /*var rangos = d3.select(".chart-rangos");
-
-                 rangos.selectAll("misbotones")
-                 .data(self.periodos)
-                 .enter()
-                 .append("button")
-                 .attr("class", "m btn btn-primary btn-md")
-                 .attr("type", "button")
-                 .attr("data-value", function (p) {
-                 return p.cantidad;
-                 })
-                 .attr("data-class", function (p) {
-                 return p.tipo;
-                 })
-                 .text(function (p) {
-                 return p.texto;
-                 });*/
-            }
         };
 
         _DatosCorrectos = function () {
+
+            //Formatea las fechas y los valores numericos que vengan como string
+            FormaterDatos();
+
             if (typeof(periodos) === 'array') {
 
             }
             return true;
 
+            function FormaterDatos() {
+                self.datos.forEach(function (dataset, i) {
+                    dataset.data.forEach(function (d, pos) {
+                        d.date = parseDate(d.date);
+                        d.close = +d.close;
+                        d.volume = +d.volume;
+                    });
+                });
+            }
+
         };
+
+        _click_periodos = function () {
+            d3.select("#" + self.raiz).selectAll('.btn_p').on('click', function (periodo) {
+
+            });
+        };
+
+
 
         _grillas_eje_x = function () {
             return d3.svg.axis().scale(x).orient("bottom").ticks(self.default_options.ticks.vertical);

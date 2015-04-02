@@ -4,7 +4,6 @@ body {
 
 /*------------------------------------------------------- Css para la linea ----------------------------- */
 path {
-    /*stroke: steelblue;*/
     /*stroke: rgba(51, 204, 204, 0.56);*/
     /*stroke-width: 2;*/
     fill: none;
@@ -38,6 +37,69 @@ path {
 }
 
 /*------------------------------------------------------- CSS para los Botones de los periodos ----------------------------- */
-.btn-periodo{
+/*.periodos > .btn_p {*/
+/*float: left;*/
+/*}*/
+
+.periodos {
     float: left;
+    padding: 3px;
 }
+
+.periodos > .btn_p {
+    cursor: pointer;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857;
+    margin-bottom: 0;
+    padding: 0px 5px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    border-color: #000000;
+    border-right: 0;
+    border-left: 1px solid;
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+}
+
+.periodos > .btn-active {
+    background: #33CCCC;
+}
+
+/*.periodos > .btn_p:first-child {*/
+/*margin-left: 0;*/
+/*}*/
+
+.periodos > .btn_p:last-child {
+    border-right: 1px solid;
+}
+
+/*.periodos > .btn_p:first-child:not(:last-child) {*/
+/*border-bottom-right-radius: 0;*/
+/*border-top-right-radius: 0;*/
+/*}*/
+
+/*.periodos > .btn_p:first-child, .btn_p:last-child {*/
+/*border-radius: 6px;*/
+/*}*/
+
+/*------------------------------------------------------- CSS para la fecha ----------------------------- */
+.date-container{
+    float: left;
+    padding: 3px;
+}
+.chart-input {
+    height: 18px;
+    letter-spacing: 1px;
+    text-align: center;
+    width: 100px;
+    word-spacing: 1px;
+}
+
+.chart_start_date{
+    margin-right: 5px;
+}
+
+
