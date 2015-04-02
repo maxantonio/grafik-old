@@ -14,7 +14,7 @@
 
             showgridLines: true,
             gridLines: {color: 'lightgrey', horizontal: true, vertical: true},
-            ticks: {x: 10, y: 6, gridX: 10, gridY: 10}, //ticks del eje x y y y las grillas
+            ticks: {x: 10, y: 6, vertical: 10, horizontal: 10}, //ticks del eje X and Y y la cantidad de grillas
 
             fontFamily: "Arial",// la Fuente
             fontSize: 12,// la Fuente
@@ -156,8 +156,6 @@
                 svg = d3.select("#" + self.raiz + " svg");
 
                 g_main = svg.select('.g_main');
-
-
 
                 if (self.default_options.showgridLines) {
                     if (self.default_options.gridLines.vertical) {
@@ -357,11 +355,11 @@
         };
 
         _grillas_eje_x = function () {
-            return d3.svg.axis().scale(x).orient("bottom").ticks(self.default_options.ticks.gridX);
+            return d3.svg.axis().scale(x).orient("bottom").ticks(self.default_options.ticks.vertical);
         };
 
         _grillas_eje_y = function () {
-            return d3.svg.axis().scale(y).orient("left").ticks(self.default_options.ticks.gridY);
+            return d3.svg.axis().scale(y).orient("left").ticks(self.default_options.ticks.horizontal);
         };
 
         //Llama a este metodo para inicializar las opciones de configuracion que sepasaron por parametro
