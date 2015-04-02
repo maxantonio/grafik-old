@@ -148,10 +148,30 @@
                     return d.date;
                 }));
 
-                //Dominio del eje Y
-                y.domain([0, d3.max(data, function (d) {
+                //valor mayor y menos
+                var min_max = d3.extent(data, function (d) {
                     return d.close;
-                })]);
+                });
+
+                console.info(min_max);
+
+                //valor para agregarle a cada limite de la grafica en el eje Y
+                //Esto es para que no quede tan pegada a los limites de la grafica la linea que se dibuja
+                var add = 0;
+                var tempTiksArray = y.ticks();
+                if (tempTiksArray >= 2) {
+                    //toma la diferencia entre 2 ticks para adicionar al limite del eje Y
+                    add = tempTiksArray[1] - tempTiksArray[0];
+                } else {
+                    add = (min_max[1] - min_max[0]) / (parseInt(yAxis.ticks()[0]) + 1);
+                }
+
+                if (add == 0)
+                    add = 1;
+
+                min_max[0] = min_max[0] - add;
+                min_max[1] = min_max[1] + add;
+                y.domain(min_max);
 
                 svg = d3.select("#" + self.raiz + " svg");
 
@@ -250,6 +270,50 @@
                     .attr('class', 'chart-periodos-container')
                     .style('background', '#33CCCC')
                     .style('height', periodHeight + 'px');
+
+                var periodos = periodos_grafica.append('div')
+                    .attr('class','periodos');
+
+                periodos.selectAll("misbotones")
+                    .data(self.periodos)
+                    .enter()
+                    .append("button")
+                    .attr("class", function (p) {
+                        var clase = "btn-p btn-periodo";
+                        return p.activo ? clase + " active" : clase
+                    })
+                    .attr("type", "button")
+                    .attr("data-value", function (p) {
+                        return p.cantidad;
+                    })
+                    .attr("data-class", function (p) {
+                        return p.tipo;
+                    })
+                    .text(function (p) {
+                        return p.texto;
+                    });
+
+
+                //var rangos = d3.select(".chart-rangos");
+                //
+                //rangos.selectAll("misbotones")
+                //    .data(self.periodos)
+                //    .enter()
+                //    .append("button")
+                //    .attr("class", function (p) {
+                //        var clase = "m btn btn-default btn-md";
+                //        return p.activo ? clase + " active" : clase
+                //    })
+                //    .attr("type", "button")
+                //    .attr("data-value", function (p) {
+                //        return p.cantidad;
+                //    })
+                //    .attr("data-class", function (p) {
+                //        return p.tipo;
+                //    })
+                //    .text(function (p) {
+                //        return p.texto;
+                //    });
             }
 
             //Creando el SVG
@@ -276,7 +340,7 @@
 
             function Inicializar_Variables() {
 
-                // Tener en cuenta que si el usuario pone titulo a la grafica entonces hay que dejar mar margin.top
+                // TODO Tener en cuenta que si el usuario pone titulo a la grafica entonces hay que dejar mas margin.top
 
 
                 //Temporalmente asigno a los periodos los que tengo por defecto

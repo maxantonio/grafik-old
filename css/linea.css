@@ -37,7 +37,7 @@ path {
     fill-opacity: 0.5;
 }
 
-/*------------------------------------------------------- CSS para los puntos de interseccion ----------------------------- */
-circle.mark {
-
+/*------------------------------------------------------- CSS para los Botones de los periodos ----------------------------- */
+.btn-periodo{
+    float: left;
 }
