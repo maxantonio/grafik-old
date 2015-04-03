@@ -28,8 +28,9 @@
             tooltip: {fontFamily: 'Arial', fontColor: 'white', fontSize: 12, fillColor: 'black', borderColor: 'white'},
 
             showPoint: true,
-            point: {radio: 2, bordeWidth: 0.5, color: 'black', borderColor: 'steelblue'},
+            point: {radio: 3.5, bordeWidth: 0.5, color: 'black', borderColor: 'steelblue'},
 
+            showLineIndicator: true,
             mouseLineIndicator: {horizontal: true, vertical: true}, //muestra linea horizontal y vertical cuando se mueve el mouse por la grafica
             lineWeight: 2 //grosor de la linea
 
@@ -63,6 +64,9 @@
         var current_data; //representa los datos que se estan graficando actualemte
         var area; //rellenar el area debajo de la grafica
         var animationTime;
+        var current_date_width, current_date_height;
+        var svg;
+        var bisectDate;
 
 
         //Mezcla las opciones con las que pasa el usuario
@@ -130,9 +134,8 @@
 
                 y.domain([min - add, max + add]);
 
-                svg = d3.select("#" + self.raiz + " svg");
-
                 g_main = svg.select('.g_main');
+
                 var lineas = g_main.selectAll('.g_line')
                     .data(self.datos)
                     .enter() //entra a los datos one by one
@@ -202,7 +205,6 @@
                         return colors(i);
                     })
                     .style("stroke-width", function (d, i) {
-                        console.info(d.lineWeight);
                         if (d.lineWeight)
                             return +d.lineWeight;
                         return +self.default_options.lineWeight
@@ -228,7 +230,9 @@
                         })
                         .enter()
                         .append('circle')
-                        .attr('class', 'mark')
+                        .attr('class', function (d, i) {
+                            return 'mark circle_' + i;
+                        })
                         .attr('fill', self.default_options.point.color)
                         .attr('stroke', self.default_options.point.borderColor)
                         .attr('stroke-width', self.default_options.point.bordeWidth)
@@ -240,20 +244,89 @@
                         })
                         .attr('r', self.default_options.point.radio)
                         .on('mouseover', function (d, i) {
-                            d3.select(this).transition().attr('r', (self.default_options.point.radio + 4));
+                            //d3.select(this).transition().attr('r', (self.default_options.point.radio + 4));
                         })
                         .on('mouseout', function (d, i) {
-                            d3.select(this).transition().attr('r', self.default_options.point.radio);
+                            //d3.select(this).transition().attr('r', self.default_options.point.radio);
                         });
                 }
 
+                var focus = g_main.select(".focus");
+
+                // append the circle para moverlo en la interseccion
+                //focus.append("circle")
+                //    .attr("class", "y")
+                //    .style("fill", "none")
+                //    .style("stroke", "blue")
+                //    .attr("r", 4);
+
+                //Rectangulo para mostrar las lineas discontinuas y capturar
+                //el mouse cuando se mueve
+                g_main.append("rect")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .style("fill", "none")
+                    .style("pointer-events", "all") //captura todos los eventos del mouse
+                    .on("mouseover", function () {
+                        focus.style("display", null);
+                    })
+                    .on("mouseout", function () {
+                        focus.style("display", "none");
+                    })
+                    .on("mousemove", _mousemove);
             }
             else {
                 throw new Error("Formato de los datos incorrectos");
             }
         };
 
-        _actualizar = function (data) {
+        _mousemove = function () {
+            var g_main = svg.select('.g_main');
+            var focus = g_main.select(".focus");
+
+            var x0 = x.invert(d3.mouse(this)[0]);
+            var dd = null;
+
+            self.datos.forEach(function (dataset, i) {
+                var pos = 0;
+                var ii = bisectDate(dataset.data, x0, 1);
+                var d0 = dataset.data[ii - 1];
+                var d1 = dataset.data[ii];
+                var d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+
+                //Le sume 1 para obtener la pos exacta
+                if (x0 - d0.date > d1.date - x0) {
+                    pos = (ii);
+                } else {
+                    pos = (ii - 1);
+                }
+
+                var current_circle = g_main.selectAll(".circle_" + pos);
+                //
+                g_main.selectAll(".circle_" + pos)
+                    .transition()
+                    .attr('r', 5);
+
+                //focus.select("circle.y")
+                //.attr("transform", "translate(" + x(d.date) + "," + y(d.close) + ")");
+
+                if (self.default_options.showLineIndicator) {
+                    //Mover las lineas indicadoras
+                    if (self.default_options.mouseLineIndicator.vertical) {
+                        focus.select(".x")
+                            .attr("transform", "translate(" + x(d.date) + ",0)")
+                            .attr("y2", height);
+                    }
+
+                    if (self.default_options.mouseLineIndicator.horizontal) {
+                        focus.select(".y")
+                            .attr("transform", "translate(" + width * -1 + "," + y(d.close) + ")")
+                            .attr("x2", width + width);
+                    }
+                }
+
+            }); //Fin del foreach
+
 
         };
 
@@ -281,6 +354,12 @@
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom);
 
+            svg.append("defs").append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                .attr("width", width)
+                .attr("height", height);
+
             g_main = svg.append("g")
                 .attr('class', 'g_main')
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -289,10 +368,31 @@
                 .attr("class", "focus")
                 .style("display", "none");
 
+            // append the x line
+            focus.append("line")
+                .attr("class", "x")
+                .style("stroke", "black")
+                .style("stroke-dasharray", "3,3")
+                //.style("opacity", 0.5)
+                .attr("y1", 0)
+                .attr("y2", height);
+
+            // append the y line
+            focus.append("line")
+                .attr("class", "y")
+                .style("stroke", "black")
+                .style("stroke-dasharray", "3,3")
+                //.style("opacity", 0.5)
+                .attr("x1", width)
+                .attr("x2", width);
+
 
             function Inicializar_Variables() {
 
                 // TODO Tener en cuenta que si el usuario pone titulo a la grafica entonces hay que dejar mas margin.top
+
+                current_date_width = 100;
+                current_date_height = 25;
 
                 //Para formatear Fechas a este formato
                 formatFecha = d3.time.format("%Y-%m-%d");
@@ -301,6 +401,9 @@
 
                 //Formato que viene la escala de tiempo en los datos
                 parseDate = d3.time.format("%Y-%m-%d").parse;
+                bisectDate = d3.bisector(function (d) {
+                    return d.date;
+                }).left;
 
                 //Escala para eje X and Y
                 x = d3.time.scale().range([0, width]);
@@ -326,7 +429,6 @@
 
                 // Define que valores va a graficar la linea para cada eje
                 valueline = d3.svg.line()
-                    .interpolate('monotone')
                     .x(function (d) {
                         return x(d.date);
                     })

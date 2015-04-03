@@ -20,7 +20,7 @@
 
         dateFormat: '%b - %d',
         ticks: {x: 10, y: 6, vertical: 10, horizontal: 6},
-        showPoint: false,
+        showPoint: true,
 
     };
 
@@ -42,11 +42,14 @@
 //            d.volume = +d.volume;
 //        });
 
+        uno =  JSON.parse(uno);
+        uno = uno.slice(20,50);
+
 
         var datos = [
             {
                 titulo: "UNO",
-                data: JSON.parse(uno),
+                data: uno,
                 mapValue: 'close',
                 mapDate: 'date',
             }/*,
