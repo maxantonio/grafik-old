@@ -10,7 +10,7 @@
         self.default_options = {
 
             showArea: true, //muestra el area sombreada bajo la linea
-            area: {color: 'lightsteelblue', opacity: '0.5'},
+            area: {color: 'lightsteelblue', opacity: '0.1'},
 
             showgridLines: true,
             gridLines: {color: 'lightgrey', horizontal: true, vertical: true},
@@ -30,52 +30,8 @@
             showPoint: true,
             point: {radio: 2, bordeWidth: 0.5, color: 'black', borderColor: 'steelblue'},
 
-            showPeriod: true,
-            periodos: [
-                {
-                    texto: "1D",
-                    cantidad: 1,
-                    tipo: "dia",
-                    activo: true
-                }, {
-                    texto: "5D",
-                    cantidad: 5,
-                    tipo: "dia",
-                    activo: false
-                }, {
-                    texto: "1M",
-                    cantidad: 1,
-                    tipo: "mes",
-                    activo: false
-                }, {
-                    texto: "3M",
-                    cantidad: 3,
-                    tipo: "mes",
-                    activo: false
-                }, {
-                    texto: "6M",
-                    cantidad: 6,
-                    tipo: "mes",
-                    activo: false
-                }, {
-                    texto: "YTD",
-                    cantidad: 0,
-                    tipo: "hasta_la_fecha",
-                    activo: false
-                }, {
-                    texto: "1Y",
-                    cantidad: 1,
-                    tipo: "anno",
-                    activo: false
-                }, {
-                    texto: "2Y",
-                    cantidad: 2,
-                    tipo: "anno",
-                    activo: false
-                }
-            ],
-
-            mouseLineIndicator: {horizontal: true, vertical: true} //muestra linea horizontal y vertical cuando se mueve el mouse por la grafica
+            mouseLineIndicator: {horizontal: true, vertical: true}, //muestra linea horizontal y vertical cuando se mueve el mouse por la grafica
+            lineWeight: 2 //grosor de la linea
 
         };
         self.titulo = "LineChart by IRStrat";
@@ -94,7 +50,6 @@
              */
 
         ]; // Datos a graficar
-        self.periodos = []; //Periodos personalizados
 
         //--------------------- Variables privadas aqui--------------------------
 
@@ -106,9 +61,6 @@
         var formatFecha, formatDate, valueline;
         var x, y, xAxis, yAxis;
         var current_data; //representa los datos que se estan graficando actualemte
-        var periodHeight; //height por defecto del div contenedor de los periodos
-        var fechaInicio, fechaFin; //fecha inicial y fecha final selesccionada
-        var inicioDominio, finDominio; //Inicio y fin de los datos cargados
         var area; //rellenar el area debajo de la grafica
         var animationTime;
 
@@ -128,7 +80,7 @@
         };
 
 
-        //TODO METODO GRAFICAR
+        //TODO METODO GRAFICAR dgfuentes
         self.graficar = function () {
             if (_DatosCorrectos()) {
 
@@ -141,9 +93,25 @@
                     return d.date;
                 }));
 
-                //valor mayor y menos
-                var min_max = d3.extent(data, function (d) {
-                    return d.close;
+                //console.info(x.domain());
+
+                ////valor mayor y menos
+                //var min_max = d3.extent(data, function (d) {
+                //    return d.close;
+                //});
+
+                //Determiar el valor minimo de todas las graficas
+                var min = d3.min(current_data, function (dataset) {
+                    return d3.min(dataset.data, function (d) {
+                        return d.close
+                    });
+                });
+
+                //Determina el valor maximo para el eje y
+                var max = d3.max(current_data, function (dataset) {
+                    return d3.max(dataset.data, function (d) {
+                        return d.close
+                    });
                 });
 
                 //valor para agregarle a cada limite de la grafica en el eje Y
@@ -154,19 +122,25 @@
                     //toma la diferencia entre 2 ticks para adicionar al limite del eje Y
                     add = tempTiksArray[1] - tempTiksArray[0];
                 } else {
-                    add = (min_max[1] - min_max[0]) / (parseInt(yAxis.ticks()[0]) + 1);
+                    add = (max - min) / (parseInt(yAxis.ticks()[0]) + 1);
                 }
 
                 if (add == 0)
                     add = 1;
 
-                min_max[0] = min_max[0] - add;
-                min_max[1] = min_max[1] + add;
-                y.domain(min_max);
+                y.domain([min - add, max + add]);
 
                 svg = d3.select("#" + self.raiz + " svg");
 
                 g_main = svg.select('.g_main');
+                var lineas = g_main.selectAll('.g_line')
+                    .data(self.datos)
+                    .enter() //entra a los datos one by one
+                    .append('g')
+                    .attr('class', function (d, i) {
+                        return 'g_line line_container_' + i;
+                    });
+
 
                 if (self.default_options.showgridLines) {
                     if (self.default_options.gridLines.vertical) {
@@ -185,28 +159,54 @@
                     }
                 }
 
+                //Dibuja el area debajo de la linea
                 if (self.default_options.showArea) {
+
                     //Dibuja el area debajo de la grafica
-                    g_main.append("path")
-                        .datum(data)
+                    lineas.append("path")
+                        .datum(function (d, i) {
+                            //si no esta definida o esta definida y es verdadera muestro el area
+                            if (self.datos[i].showArea === undefined || self.datos[i].showArea)
+                                return d.data;
+                            return [];
+                        })
                         .attr("class", "area")
-                        .style("fill", self.default_options.area.color)
-                        .style("fill-opacity", +self.default_options.area.opacity)
+                        .style("stroke", function (d, i) {
+                            return colors(i);
+                        })
+                        .style("fill", function (d, i) {
+                            if (self.datos[i].area) //si tiene definido la propiedad area
+                                return self.datos[i].area.color;
+                            else
+                                return colors(i);
+                        })
+                        .style("fill-opacity", function (d, i) {
+                            if (self.datos[i].area)
+                                return +self.datos[i].area.opacity;
+                            else
+                                return +self.default_options.area.opacity;
+                        })
                         .attr("d", area);
                 }
 
                 //Dibuja la linea
-                g_main.append("path")
-                    .datum(data)
+                lineas.append("path")
                     .attr("clip-path", "url(#clip)")
-                    .attr("class", "line line-main")
-                    .attr("stroke", function (d, i) {
-                        return colors(i)
+                    .attr("class", function (d, i) {
+                        return "line line_" + i;
                     })
-                    //.attr("stroke", "#FF0066") rojo
-                    //.attr("stroke", "#ff7f0e")
-                    .attr("stroke-width", 1)
-                    .attr("d", valueline);
+                    .attr('d', function (d, i) {
+                        return valueline(d.data);
+                    })
+                    .attr("stroke", function (d, i) {
+                        return colors(i);
+                    })
+                    .style("stroke-width", function (d, i) {
+                        console.info(d.lineWeight);
+                        if (d.lineWeight)
+                            return +d.lineWeight;
+                        return +self.default_options.lineWeight
+                    });
 
                 //  Adiciona el Eje Y
                 g_main.append("g")
@@ -219,8 +219,15 @@
                     .attr("transform", "translate(0," + height + ")")
                     .call(xAxis);
 
+                //Adicionar los puntos
                 if (self.default_options.showPoint) {
-                    g_main.selectAll('circle.mark').data(data).enter().append('circle')
+
+                    lineas.selectAll('circle.mark')
+                        .data(function (d) {
+                            return d.data;
+                        })
+                        .enter()
+                        .append('circle')
                         .attr('class', 'mark')
                         .attr('fill', self.default_options.point.color)
                         .attr('stroke', self.default_options.point.borderColor)
@@ -237,10 +244,11 @@
                         })
                         .on('mouseout', function (d, i) {
                             d3.select(this).transition().attr('r', self.default_options.point.radio);
-                        })
+                        });
                 }
 
-            } else {
+            }
+            else {
                 throw new Error("Formato de los datos incorrectos");
             }
         };
@@ -254,68 +262,17 @@
 
             Inicializar_Variables();
 
-
             //TODO Inicializando elemento raiz con sus propiedades
             var realWidth = width + margin.left + margin.right;
             d3.select("#" + self.raiz)
                 .style("max-width", realWidth + 'px')
                 .style('width', '100%');
 
-            // TODO Crear los periodos
-            if (self.default_options.showPeriod) {
-                var periodos_grafica = d3.select("#" + self.raiz)
-                    .append('div')
-                    .attr('id', 'chart-periodos')
-                    .attr('class', 'chart-periodos-container')
-                    //.style('background', '#33CCCC')
-                    .style('border', "1px solid #33CCCC")
-                    .style('height', periodHeight + 'px');
-
-                var periodos = periodos_grafica.append('div')
-                    .attr('class', 'periodos');
-
-                periodos.selectAll("misbotones")
-                    .data(self.periodos)
-                    .enter()
-                    .append("button")
-                    .attr("class", function (p) {
-                        var clase = "btn_p btn_periodo";
-                        return p.activo ? clase + " btn-active" : clase
-                    })
-                    .attr("type", "button")
-                    .attr("data-value", function (p) {
-                        return p.cantidad;
-                    })
-                    .attr("data-class", function (p) {
-                        return p.tipo;
-                    })
-                    .text(function (p) {
-                        return p.texto;
-                    });
-
-                //Inicializa los click en los periodos
-                _click_periodos();
-
-                var date_container = periodos_grafica.append('div')
-                    .attr('class', 'date-container');
-
-                //TODO Ponerle los eventos keypress a los input
-                date_container
-                    .append('input')
-                    .attr('class', 'chart-input chart_start_date')
-                    .attr('placeholder', '02-05-2010');
-
-                date_container
-                    .append('input')
-                    .attr('class', 'chart-input chart_end_date');
-
-
-            }
-
             //Creando el SVG
             svg = d3.select("#" + self.raiz)
                 .append('div')
                 .attr('class', 'chart-container')
+                .style('border', '1px solid black')
                 .style('width', '100%')
                 .append("svg")
                 .attr("id", "chart-svg")
@@ -336,11 +293,6 @@
             function Inicializar_Variables() {
 
                 // TODO Tener en cuenta que si el usuario pone titulo a la grafica entonces hay que dejar mas margin.top
-
-
-                //Temporalmente asigno a los periodos los que tengo por defecto
-                self.periodos = self.default_options.periodos;
-                periodHeight = 30; //height de los periodos
 
                 //Para formatear Fechas a este formato
                 formatFecha = d3.time.format("%Y-%m-%d");
@@ -390,33 +342,26 @@
 
         _DatosCorrectos = function () {
 
-            //Formatea las fechas y los valores numericos que vengan como string
-            FormaterDatos();
+            //TODO Comprobar para datos y default que lineWeight va de 1 a 5
 
-            if (typeof(periodos) === 'array') {
+            //Formatea las fechas y los valores numericos que vengan como string
+            formaterDatos();
+
+            if (typeof(self.datos) === 'array') {
 
             }
             return true;
 
-            function FormaterDatos() {
-                self.datos.forEach(function (dataset, i) {
-                    dataset.data.forEach(function (d, pos) {
-                        d.date = parseDate(d.date);
-                        d.close = +d.close;
-                        d.volume = +d.volume;
+            function formaterDatos() {
+                self.datos.forEach(function (dataset) {
+                    dataset.data.forEach(function (d) {
+                        d.date = parseDate(d[dataset.mapDate]);
+                        d.close = +d[dataset.mapValue];
                     });
                 });
             }
 
         };
-
-        _click_periodos = function () {
-            d3.select("#" + self.raiz).selectAll('.btn_p').on('click', function (periodo) {
-
-            });
-        };
-
-
 
         _grillas_eje_x = function () {
             return d3.svg.axis().scale(x).orient("bottom").ticks(self.default_options.ticks.vertical);
@@ -431,4 +376,5 @@
     };
 
 //Fin de la libreria
-})();
+})
+();
