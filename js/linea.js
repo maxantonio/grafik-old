@@ -10,7 +10,7 @@
         self.default_options = {
 
             showArea: true, //muestra el area sombreada bajo la linea
-            area: {color: 'lightsteelblue', opacity: '0.1'},
+            area: {color: 'lightsteelblue', opacity: 0.1},
 
             showgridLines: true,
             gridLines: {color: 'lightgrey', horizontal: true, vertical: true},
@@ -22,8 +22,8 @@
             /*Formatos de la escala de tiempo de los datos*/
             dateFormat: "%Y-%m-%d", // Formato de la fecha
 
-            //indicador de la fecha por donde va el mouse
-            current_dateFormat_indicator: d3.time.format("%b %d, %Y"),
+            //Formato de la fecha del indicador cuando se mnueve el mouse
+            current_dateFormat_indicator: "%b %d, %Y",
 
             animation: true, //Animada
             animacionType: '', // tipo de animacion
@@ -37,8 +37,13 @@
 
             showLineIndicator: true,
             mouseLineIndicator: {horizontal: true, vertical: true}, //muestra linea horizontal y vertical cuando se mueve el mouse por la grafica
-            lineWeight: 2 //grosor de la linea
+            lineWeight: 2, //grosor de la linea
 
+            // Valor que se va a graficar de los datos.
+            mapValue: 'close',
+
+            // Valor que representa la escala de tiempo en los datos
+            mapDate: 'date'
 
         };
         self.titulo = "LineChart by IRStrat";
@@ -360,8 +365,9 @@
 
             var tooltip_date = d3.select("#" + self.raiz).select('.tooltip');
 
+            var parser = d3.time.format(self.default_options.current_dateFormat_indicator);
             tooltip_date.select('span')
-                .text(self.default_options.current_dateFormat_indicator(dd.date));
+                .text(parser(dd.date));
 
             var tooltip_date_width = parseInt(tooltip_date.style('width'));
 
@@ -432,7 +438,7 @@
             d3.select("#" + self.raiz)
                 .append('div')
                 .attr('class', 'tooltip current_date hidden')
-                .style('left','100%')
+                .style('left', '100%')
                 .append('span')
                 .attr('class', 'current_date_text');
 
@@ -500,12 +506,19 @@
             return true;
 
             function formaterDatos() {
-                self.datos.forEach(function (dataset, i) {
+                self.datos.forEach(function (dataset) {
                     if (dataset.dateFormat) //si esta definida
                         parseDate = d3.time.format(dataset.dateFormat).parse;
                     dataset.data.forEach(function (d) {
-                        d.date = parseDate(d[dataset.mapDate]);
-                        d.close = +d[dataset.mapValue];
+                        if (dataset.mapDate) //si esta definida
+                            d.date = parseDate(d[dataset.mapDate]);
+                        else
+                            d.date = parseDate(d[self.default_options.mapDate]);
+
+                        if (dataset.mapValue)
+                            d.close = +d[dataset.mapValue];
+                        else
+                            d.close = +d[self.default_options.mapValue];
                     });
                 });
             }
