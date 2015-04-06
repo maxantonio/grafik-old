@@ -30,7 +30,7 @@ point: {radio: 2, bordeWidth: 0.5, color: 'black', borderColor: 'steelblue'},
 showLineIndicator: true,
 
 //Mostrar o no el indicador horizontal o vertical.
-mouseLineIndicator: {horizontal: true, vertical: true}, //muestra linea horizontal y vertical cuando se mueve el mouse por la grafica
+mouseLineIndicator: {horizontal: true, vertical: true},
 
 //Grosor de la línea
  lineWeight: 2,
@@ -40,8 +40,11 @@ dateFormat: "%Y-%m-%d",
 
 //Formato de la fecha que se muestra en el indicador cuando se mueve el mouse
 current_dateFormat_indicator: "%b %d, %Y",
-
 ```
+
+Nota: Para más información sobre los formatos para las escalas de tiempo ver [(aquí).](https://github.com/mbostock/d3/wiki/Time-Formatting)
+
+
 
 ## Opciones configurables para cada linea que se quiere dibujar
 ```javascript
