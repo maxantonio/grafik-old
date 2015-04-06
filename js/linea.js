@@ -19,7 +19,11 @@
             fontFamily: "Arial",// la Fuente
             fontSize: 12,// la Fuente
 
+            /*Formatos de la escala de tiempo de los datos*/
             dateFormat: "%Y-%m-%d", // Formato de la fecha
+
+            //indicador de la fecha por donde va el mouse
+            current_dateFormat_indicator: d3.time.format("%b %d, %Y"),
 
             animation: true, //Animada
             animacionType: '', // tipo de animacion
@@ -27,12 +31,14 @@
 
             tooltip: {fontFamily: 'Arial', fontColor: 'white', fontSize: 12, fillColor: 'black', borderColor: 'white'},
 
+            //Si no se especifican, salen del color de la linea
             showPoint: true,
-            point: {radio: 3.5, bordeWidth: 0.5, color: 'black', borderColor: 'steelblue'},
+            point: {radio: 3.5, bordeWidth: 1.5, color: 'steelblue', borderColor: 'white'},
 
             showLineIndicator: true,
             mouseLineIndicator: {horizontal: true, vertical: true}, //muestra linea horizontal y vertical cuando se mueve el mouse por la grafica
             lineWeight: 2 //grosor de la linea
+
 
         };
         self.titulo = "LineChart by IRStrat";
@@ -54,12 +60,12 @@
 
         //--------------------- Variables privadas aqui--------------------------
 
-        var margin = {top: 5, right: 0, bottom: 25, left: 30};
+        var margin = {top: 5, right: 0, bottom: 25, left: 40};
         var width = 800 - margin.left - margin.right, height = 400 - margin.top - margin.bottom;
 
         var colors;
         var parseDate;
-        var formatFecha, formatDate, valueline;
+        var valueline;
         var x, y, xAxis, yAxis;
         var current_data; //representa los datos que se estan graficando actualemte
         var area; //rellenar el area debajo de la grafica
@@ -90,21 +96,25 @@
 
                 current_data = self.datos;
 
-                var data = self.datos[0].data;
+                //Determiar el valor minimo para el eje x, de todos los datos
+                var minDate = d3.min(current_data, function (dataset) {
+                    return d3.min(dataset.data, function (d) {
+                        return d.date
+                    });
+                });
+
+                //Determina el valor maximo para el eje x
+                var maxDate = d3.max(current_data, function (dataset) {
+                    return d3.max(dataset.data, function (d) {
+                        return d.date
+                    });
+                });
 
                 //establece el dominio para el eje x (es decir, de donde a donde van los valores)
-                x.domain(d3.extent(data, function (d) {
-                    return d.date;
-                }));
+                x.domain([minDate, maxDate]);
 
-                //console.info(x.domain());
 
-                ////valor mayor y menos
-                //var min_max = d3.extent(data, function (d) {
-                //    return d.close;
-                //});
-
-                //Determiar el valor minimo de todas las graficas
+                //Determiar el valor minimo para el eje y, de todos los datos
                 var min = d3.min(current_data, function (dataset) {
                     return d3.min(dataset.data, function (d) {
                         return d.close
@@ -136,15 +146,6 @@
 
                 g_main = svg.select('.g_main');
 
-                var lineas = g_main.selectAll('.g_line')
-                    .data(self.datos)
-                    .enter() //entra a los datos one by one
-                    .append('g')
-                    .attr('class', function (d, i) {
-                        return 'g_line line_container_' + i;
-                    });
-
-
                 if (self.default_options.showgridLines) {
                     if (self.default_options.gridLines.vertical) {
                         //Grillas verticales
@@ -161,6 +162,15 @@
                             .call(_grillas_eje_y().tickSize(-width, 0, 0).tickFormat(""));
                     }
                 }
+
+                //Dibujar las lineas
+                var lineas = g_main.selectAll('.g_line')
+                    .data(self.datos)
+                    .enter() //entra a los datos one by one
+                    .append('g')
+                    .attr('class', function (d, i) {
+                        return 'g_line line_container_' + i;
+                    });
 
                 //Dibuja el area debajo de la linea
                 if (self.default_options.showArea) {
@@ -226,28 +236,34 @@
 
                     lineas.selectAll('circle.mark')
                         .data(function (d) {
-                            return d.data;
+                            //Si esta definida la propiedad
+                            if (d.showPoint || d.showPoint === undefined)
+                                return d.data;
+                            return [];
                         })
                         .enter()
                         .append('circle')
                         .attr('class', function (d, i) {
+                            //Oculata el 1er punto de la linea
                             return 'mark circle_' + i;
                         })
-                        .attr('fill', self.default_options.point.color)
-                        .attr('stroke', self.default_options.point.borderColor)
-                        .attr('stroke-width', self.default_options.point.bordeWidth)
+                        .attr('fill', function (d, i, posData) {
+                            return _getPointFill(posData);
+                        })
+                        .attr('stroke', function (d, i, posData) {
+                            return _getPointBorderColor(posData);
+                        })
+                        .attr('stroke-width', function (d, i, posData) {
+                            return _getPointBorderWidth(posData);
+                        })
                         .attr('cx', function (d) {
                             return x(d.date);
                         })
                         .attr('cy', function (d) {
                             return y(d.close);
                         })
-                        .attr('r', self.default_options.point.radio)
-                        .on('mouseover', function (d, i) {
-                            //d3.select(this).transition().attr('r', (self.default_options.point.radio + 4));
-                        })
-                        .on('mouseout', function (d, i) {
-                            //d3.select(this).transition().attr('r', self.default_options.point.radio);
+                        .attr('r', function (d, i, posData) {
+                            return _getPointRadio(posData);
                         });
                 }
 
@@ -269,26 +285,32 @@
                     .style("pointer-events", "all") //captura todos los eventos del mouse
                     .on("mouseover", function () {
                         focus.style("display", null);
+                        d3.select('.current_date').classed('hidden', false);
                     })
                     .on("mouseout", function () {
                         focus.style("display", "none");
+                        d3.select('.current_date').classed('hidden', true);
                     })
                     .on("mousemove", _mousemove);
+
             }
             else {
                 throw new Error("Formato de los datos incorrectos");
             }
         };
 
+
         _mousemove = function () {
             var g_main = svg.select('.g_main');
             var focus = g_main.select(".focus");
+            var g_lines = null;
 
             var x0 = x.invert(d3.mouse(this)[0]);
             var dd = null;
 
-            self.datos.forEach(function (dataset, i) {
-                var pos = 0;
+            self.datos.forEach(function (dataset, posData) {
+                g_lines = g_main.select('.line_container_' + posData);
+                var posx = 0;
                 var ii = bisectDate(dataset.data, x0, 1);
                 var d0 = dataset.data[ii - 1];
                 var d1 = dataset.data[ii];
@@ -296,16 +318,25 @@
 
                 //Le sume 1 para obtener la pos exacta
                 if (x0 - d0.date > d1.date - x0) {
-                    pos = (ii);
+                    posx = (ii);
+                    dd = d1;
                 } else {
-                    pos = (ii - 1);
+                    posx = (ii - 1);
+                    dd = d0;
                 }
 
-                var current_circle = g_main.selectAll(".circle_" + pos);
-                //
-                g_main.selectAll(".circle_" + pos)
-                    .transition()
-                    .attr('r', 5);
+                var current_circle = g_lines.select(".circle_" + posx);
+
+                if (current_circle.attr('class').indexOf('activo') == -1) {
+                    /*Desactivo el que estaba y activo el nuevo*/
+                    var estaba = g_lines.select('circle.activo');
+                    estaba.classed('activo', false); //le quito la clase activo
+                    estaba.transition().attr('r', _getPointRadio(posData)); //le actualizo su radio
+
+                    //Activo el nuevo y le pongo su nuevo radio
+                    current_circle.classed('activo', true);
+                    current_circle.transition().attr('r', 6)
+                }
 
                 //focus.select("circle.y")
                 //.attr("transform", "translate(" + x(d.date) + "," + y(d.close) + ")");
@@ -323,10 +354,20 @@
                             .attr("transform", "translate(" + width * -1 + "," + y(d.close) + ")")
                             .attr("x2", width + width);
                     }
-                }
+                } //fin mostrar lineas discontinuas
 
             }); //Fin del foreach
 
+            var tooltip_date = d3.select("#" + self.raiz).select('.tooltip');
+
+            tooltip_date.select('span')
+                .text(self.default_options.current_dateFormat_indicator(dd.date));
+
+            var tooltip_date_width = parseInt(tooltip_date.style('width'));
+
+            tooltip_date
+                .style('left', (x(dd.date) + margin.left + 7 - (tooltip_date_width / 2)) + "px")
+                .style('top', (height + 13 ) + "px");
 
         };
 
@@ -345,7 +386,7 @@
             svg = d3.select("#" + self.raiz)
                 .append('div')
                 .attr('class', 'chart-container')
-                .style('border', '1px solid black')
+                //.style('border', '1px solid black')
                 .style('width', '100%')
                 .append("svg")
                 .attr("id", "chart-svg")
@@ -368,7 +409,7 @@
                 .attr("class", "focus")
                 .style("display", "none");
 
-            // append the x line
+            //Lineas discontinuas Indicadores cuando se mueve el mouse.
             focus.append("line")
                 .attr("class", "x")
                 .style("stroke", "black")
@@ -386,6 +427,14 @@
                 .attr("x1", width)
                 .attr("x2", width);
 
+            /*--------------- Tooltips ---------------*/
+            // Current Date Indicator
+            d3.select("#" + self.raiz)
+                .append('div')
+                .attr('class', 'tooltip current_date hidden')
+                .style('left','100%')
+                .append('span')
+                .attr('class', 'current_date_text');
 
             function Inicializar_Variables() {
 
@@ -394,13 +443,11 @@
                 current_date_width = 100;
                 current_date_height = 25;
 
-                //Para formatear Fechas a este formato
-                formatFecha = d3.time.format("%Y-%m-%d");
-
                 colors = d3.scale.category10();//escala de 10 colores de d3
 
                 //Formato que viene la escala de tiempo en los datos
-                parseDate = d3.time.format("%Y-%m-%d").parse;
+                parseDate = d3.time.format(self.default_options.dateFormat).parse;
+
                 bisectDate = d3.bisector(function (d) {
                     return d.date;
                 }).left;
@@ -411,8 +458,7 @@
 
                 //Eje X and Y
                 xAxis = d3.svg.axis().scale(x).orient("bottom")
-                    .ticks(self.default_options.ticks.x)
-                    .tickFormat(d3.time.format(self.default_options.dateFormat));
+                    .ticks(self.default_options.ticks.x);
 
                 yAxis = d3.svg.axis().scale(y).orient("left")
                     .ticks(self.default_options.ticks.y);
@@ -437,7 +483,6 @@
                     });
 
                 animationTime = 750; //750 milisegundos
-
             }
 
         };
@@ -455,7 +500,9 @@
             return true;
 
             function formaterDatos() {
-                self.datos.forEach(function (dataset) {
+                self.datos.forEach(function (dataset, i) {
+                    if (dataset.dateFormat) //si esta definida
+                        parseDate = d3.time.format(dataset.dateFormat).parse;
                     dataset.data.forEach(function (d) {
                         d.date = parseDate(d[dataset.mapDate]);
                         d.close = +d[dataset.mapValue];
@@ -473,8 +520,40 @@
             return d3.svg.axis().scale(y).orient("left").ticks(self.default_options.ticks.horizontal);
         };
 
+        /*-------------------- datos de los PUNTOS --------------------*/
+        _getPointFill = function (posData) {
+            if (self.datos[posData].point) {
+                if (self.datos[posData].point.color)//si esta definida
+                    return self.datos[posData].point.color;
+                else if (self.datos[posData].color)
+                    return self.datos[posData].color;
+            }
+            return colors(posData);
+        };
+        _getPointRadio = function (posData) {
+            if (self.datos[posData].point)
+                if (self.datos[posData].point.radio) //si esta definida para esa linea
+                    return self.datos[posData].point.radio;
+            return self.default_options.point.radio;
+        };
+
+        _getPointBorderColor = function (posData) {
+            if (self.datos[posData].point)
+                if (self.datos[posData].point.borderColor)
+                    return self.datos[posData].point.borderColor;
+            return self.default_options.point.borderColor;
+        };
+
+        _getPointBorderWidth = function (posData) {
+            if (self.datos[posData].point)
+                if (self.datos[posData].point.borderWidth)
+                    return self.datos[posData].point.borderWidth;
+            return self.default_options.point.borderWidth;
+        };
+
         //Llama a este metodo para inicializar las opciones de configuracion que sepasaron por parametro
         _init();
+
     };
 
 //Fin de la libreria

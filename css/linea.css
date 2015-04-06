@@ -2,6 +2,10 @@ body {
     font: 12px Arial;
 }
 
+.hidden {
+    display: none;
+}
+
 /*------------------------------------------------------- Css para la linea ----------------------------- */
 path {
     /*stroke: rgba(51, 204, 204, 0.56);*/
@@ -35,11 +39,14 @@ path {
     stroke-width: 0;
     fill-opacity: 0.5;
 }
-/*------------------------------------------------------- CSS para la fecha ----------------------------- */
-.date-container{
+
+/*------------------------------------------------------- CSS para la fecha del rango ----------------------------- */
+
+.date-container {
     float: left;
     padding: 3px;
 }
+
 .chart-input {
     height: 18px;
     letter-spacing: 1px;
@@ -48,8 +55,31 @@ path {
     word-spacing: 1px;
 }
 
-.chart_start_date{
+.chart_start_date {
     margin-right: 5px;
 }
 
+/*------------------------------------------------------- CSS para el indicador de la fecha en la parde de abajo ----------------------------- */
+
+.current_date{
+    height: 20px
+}
+
+span.current_date_text {
+    color: #ffffff;
+    vertical-align: middle;
+    margin-top: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    position: relative;
+}
+
+div.tooltip {
+    background: #000000;
+    border: 0px;
+    font: 12px sans-serif;
+    pointer-events: none;
+    position: absolute;
+    text-align: center;
+}
 
