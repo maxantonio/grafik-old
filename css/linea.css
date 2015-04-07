@@ -61,25 +61,30 @@ path {
 
 /*------------------------------------------------------- CSS para el indicador de la fecha en la parde de abajo ----------------------------- */
 
-.current_date{
+.current_date {
     height: 20px
 }
 
-span.current_date_text {
+.current_date_text {
     color: #ffffff;
     vertical-align: middle;
-    margin-top: 5px;
-    padding-left: 10px;
-    padding-right: 10px;
+    margin-top: 3px;
     position: relative;
+    text-align: center;
 }
 
 div.tooltip {
     background: #000000;
-    border: 0px;
-    font: 12px sans-serif;
     pointer-events: none;
     position: absolute;
-    text-align: center;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
+.info {
+    color: #ffffff;
+    opacity: .9;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-style: solid;
+}

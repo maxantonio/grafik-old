@@ -19,9 +19,8 @@
     var opciones = {
 
         //dateFormat: '%b - %d',
-        ticks: {x: 5, y: 6, vertical: 10, horizontal: 6},
+        //ticks: {x: 5, y: 6, vertical: 3, horizontal: 6},
         showPoint: true,
-
     };
 
     var linea = new LineChart("chart", opciones);
@@ -42,8 +41,8 @@
 //            d.close = +d.close;
 //            d.volume = +d.volume;
 //        });
-        var desde = 5;
-        var cant = 10;
+        var desde = 20;
+        var cant = 50;
 
         uno = JSON.parse(uno);
         uno = uno.slice(desde, desde + cant);
@@ -57,13 +56,14 @@
 
         var datos = [
             {
-                titulo: "UNO",
+                titulo: "IRStrat",
                 data: uno,
                 mapValue: 'close',
                 mapDate: 'date',
+                showArea: false
             }/*,
             {
-                titulo: "DOS",
+                titulo: "IPC",
                 data: x,
                 mapValue: 'hight',
                 mapDate: 'date',
@@ -74,7 +74,9 @@
                 titulo: "BBC",
                 data: y,
                 mapValue: 'low',
-                mapDate: 'date'
+                mapDate: 'date',
+                showArea:false
+
             }*/
         ];
 

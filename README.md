@@ -2,7 +2,7 @@ LineChart
 =========
 Basada en [d3js](https://github.com/mbostock/d3) y tiene como objetivo principal crear gráficas de línea.
 
-## Opciones por defecto
+## Opciones Generales
 
 ```javascript
 //muestra el area sombreada bajo la linea
@@ -40,10 +40,23 @@ dateFormat: "%Y-%m-%d",
 
 //Formato de la fecha que se muestra en el indicador cuando se mueve el mouse
 current_dateFormat_indicator: "%b %d, %Y",
+
+// Mostrar o no ToolTip con informacion del punto actual en la gráfica
+ showToolTip: true,
+
+// configuracion del Tooltip
+ tooltip: {
+    fontFamily: 'Arial', // Tipo de fuente
+    fontColor: 'white', // color de la fuente
+    fontSize: "12px", // tamano de la fuente
+    backgroundColor: 'black', // color de fondo
+    opacidad: 1, //opacidad
+    borderColor: 'red', // color de borde
+    borderWidth: "0px" // ancho del borde
+},
 ```
 
-Nota: Para más información sobre los formatos para las escalas de tiempo ver [(aquí).](https://github.com/mbostock/d3/wiki/Time-Formatting)
-
+Nota: Para más información sobre los formatos para las escalas de tiempo ver [(aquí).](https://github.com/mbostock/d3/wiki/Time-Formatting#format)
 
 
 ## Opciones configurables para cada linea que se quiere dibujar

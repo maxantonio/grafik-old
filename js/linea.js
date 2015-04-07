@@ -29,7 +29,16 @@
             animacionType: '', // tipo de animacion
             responsive: true, //Responsiva
 
-            tooltip: {fontFamily: 'Arial', fontColor: 'white', fontSize: 12, fillColor: 'black', borderColor: 'white'},
+            showToolTip: false,
+            tooltip: {
+                fontFamily: 'Arial', // Fuente
+                fontColor: 'white', // color de la fuente
+                fontSize: "12px", // tamano de la fuente
+                backgroundColor: 'black', // background
+                opacidad: 1,
+                borderColor: 'red', // color de borde
+                borderWidth: "0px" // ancho del borde
+            },
 
             //Si no se especifican, salen del color de la linea
             showPoint: true,
@@ -225,6 +234,17 @@
                         return +self.default_options.lineWeight
                     });
 
+                yAxis.tickFormat(function (tickValue) {
+                    //si no es un float
+                    if (tickValue.toString().indexOf('.') == -1) {
+                        return tickValue;
+                    } else {
+                        //lo redondeo a 2 lugares despues de la coma
+                        //return +tickValue.toFixed(2);
+                        return tickValue;
+                    }
+                });
+
                 //  Adiciona el Eje Y
                 g_main.append("g")
                     .attr("class", "y axis")
@@ -291,10 +311,12 @@
                     .on("mouseover", function () {
                         focus.style("display", null);
                         d3.select('.current_date').classed('hidden', false);
+                        d3.select("#" + self.raiz).select(".info").classed('hidden', false);
                     })
                     .on("mouseout", function () {
                         focus.style("display", "none");
                         d3.select('.current_date').classed('hidden', true);
+                        d3.select("#" + self.raiz).select(".info").classed('hidden', true);
                     })
                     .on("mousemove", _mousemove);
 
@@ -313,6 +335,7 @@
             var x0 = x.invert(d3.mouse(this)[0]);
             var dd = null;
 
+            var current_info = d3.select("#" + self.raiz).select(".current_info");
             self.datos.forEach(function (dataset, posData) {
                 g_lines = g_main.select('.line_container_' + posData);
                 var posx = 0;
@@ -340,11 +363,21 @@
 
                     //Activo el nuevo y le pongo su nuevo radio
                     current_circle.classed('activo', true);
-                    current_circle.transition().attr('r', 6)
-                }
+                    current_circle.transition().attr('r', 6);
 
-                //focus.select("circle.y")
-                //.attr("transform", "translate(" + x(d.date) + "," + y(d.close) + ")");
+                    if (self.default_options.showToolTip) {
+
+                        console.info(self.default_options.showToolTip);
+                        var result = current_info.select("div[data-titulo='" + dataset.titulo + "']");
+                        if (result.empty()) {
+                            current_info.append('div')
+                                .attr('data-titulo', dataset.titulo)
+                                .html('<b>' + dataset.titulo + ':</b> ' + dd.close);
+                        } else {
+                            result.html('<b>' + dataset.titulo + ':</b> ' + dd.close);
+                        }
+                    } // fin de show Tooltips
+                }
 
                 if (self.default_options.showLineIndicator) {
                     //Mover las lineas indicadoras
@@ -366,15 +399,17 @@
             var tooltip_date = d3.select("#" + self.raiz).select('.tooltip');
 
             var parser = d3.time.format(self.default_options.current_dateFormat_indicator);
-            tooltip_date.select('span')
-                .text(parser(dd.date));
-
+            tooltip_date.select('div').text(parser(dd.date));
             var tooltip_date_width = parseInt(tooltip_date.style('width'));
 
             tooltip_date
                 .style('left', (x(dd.date) + margin.left + 7 - (tooltip_date_width / 2)) + "px")
                 .style('top', (height + 13 ) + "px");
 
+            if (self.default_options.showToolTip) {
+                d3.select("#" + self.raiz).select('.info').style('left', (x(dd.date) + margin.left + 20) + "px")
+                    .style('top', (y(dd.close) + margin.top - (45 / 2)) + "px");
+            }
         };
 
         //Inicializa el SVG, y todos los elementos necesarios para crear la grafica
@@ -439,8 +474,22 @@
                 .append('div')
                 .attr('class', 'tooltip current_date hidden')
                 .style('left', '100%')
-                .append('span')
+                .append('div')
                 .attr('class', 'current_date_text');
+
+            // Current Date Indicator
+            d3.select("#" + self.raiz)
+                .append('div')
+                .attr('class', 'tooltip info hidden')
+                .style('left', '100%')
+                .style("background", self.default_options.tooltip.backgroundColor)
+                .style("font-family", self.default_options.tooltip.fontFamily)
+                .style("font-size", self.default_options.tooltip.fontSize)
+                .style("opacity", self.default_options.tooltip.opacidad)
+                .style("border-width", self.default_options.tooltip.borderWidth)
+                .style("border-color", self.default_options.tooltip.borderColor)
+                .append('div')
+                .attr('class', 'current_info');
 
             function Inicializar_Variables() {
 
