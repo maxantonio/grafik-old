@@ -29,12 +29,12 @@
             animacionType: '', // tipo de animacion
             responsive: true, //Responsiva
 
-            showToolTip: false,
+            showToolTip: true,
             tooltip: {
                 fontFamily: 'Arial', // Fuente
                 fontColor: 'white', // color de la fuente
                 fontSize: "12px", // tamano de la fuente
-                backgroundColor: 'black', // background
+                backgroundColor: 'green', // background
                 opacidad: 1,
                 borderColor: 'red', // color de borde
                 borderWidth: "0px" // ancho del borde
@@ -234,16 +234,7 @@
                         return +self.default_options.lineWeight
                     });
 
-                yAxis.tickFormat(function (tickValue) {
-                    //si no es un float
-                    if (tickValue.toString().indexOf('.') == -1) {
-                        return tickValue;
-                    } else {
-                        //lo redondeo a 2 lugares despues de la coma
-                        //return +tickValue.toFixed(2);
-                        return tickValue;
-                    }
-                });
+                yAxis.tickFormat(d3.format("s"));
 
                 //  Adiciona el Eje Y
                 g_main.append("g")
@@ -320,6 +311,7 @@
                     })
                     .on("mousemove", _mousemove);
 
+                _resize();
             }
             else {
                 throw new Error("Formato de los datos incorrectos");
@@ -366,15 +358,14 @@
                     current_circle.transition().attr('r', 6);
 
                     if (self.default_options.showToolTip) {
-
-                        console.info(self.default_options.showToolTip);
+                        var value = d3.format(",.2f")(dd.close);
                         var result = current_info.select("div[data-titulo='" + dataset.titulo + "']");
                         if (result.empty()) {
                             current_info.append('div')
                                 .attr('data-titulo', dataset.titulo)
-                                .html('<b>' + dataset.titulo + ':</b> ' + dd.close);
+                                .html('<b>' + dataset.titulo + ':</b> ' + value);
                         } else {
-                            result.html('<b>' + dataset.titulo + ':</b> ' + dd.close);
+                            result.html('<b>' + dataset.titulo + ':</b> ' + value);
                         }
                     } // fin de show Tooltips
                 }
@@ -611,6 +602,35 @@
                 if (self.datos[posData].point.borderWidth)
                     return self.datos[posData].point.borderWidth;
             return self.default_options.point.borderWidth;
+        };
+
+        //Responsive chart
+        _resize = function () {
+            d3.select(window).on('resize', resize);
+            resize();
+
+            function resize() {
+                var width = parseInt(d3.select("#" + self.raiz).select('svg').style("width")),
+                    height = parseInt(d3.select("#" + self.raiz).select('svg').style("height"));
+
+                console.info(width, height);
+
+                //x.range([0, width]);
+                //y.range([height, 0]);
+                //
+                //yAxis.ticks(Math.max(height / 50, 2));
+                //xAxis.ticks(Math.max(width / 50, 2));
+                //
+                //svg.select('.x.axis')
+                //    .attr("transform", "translate(0," + height + ")")
+                //    .call(xAxis);
+                //
+                //svg.select('.y.axis')
+                //    .call(yAxis);
+                //
+                //svg.select('.line-main')
+                //    .attr("d", valueline);
+            }
         };
 
         //Llama a este metodo para inicializar las opciones de configuracion que sepasaron por parametro
