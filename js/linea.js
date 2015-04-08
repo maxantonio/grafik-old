@@ -9,12 +9,16 @@
         self.opciones = opciones;
         self.default_options = {
 
+            background: "#BDC3CA",
+            width: 550,
+            height: 300,
+
             showArea: true, //muestra el area sombreada bajo la linea
             area: {color: 'lightsteelblue', opacity: 0.1},
 
             showgridLines: true,
             gridLines: {color: 'lightgrey', horizontal: true, vertical: true},
-            ticks: {x: 10, y: 6, vertical: 10, horizontal: 10}, //ticks del eje X and Y y la cantidad de grillas
+            ticks: {x: 5, y: 5, vertical: 5, horizontal: 5}, //ticks del eje X and Y y la cantidad de grillas
 
             fontFamily: "Arial",// la Fuente
             fontSize: 12,// la Fuente
@@ -34,7 +38,7 @@
                 fontFamily: 'Arial', // Fuente
                 fontColor: 'white', // color de la fuente
                 fontSize: "12px", // tamano de la fuente
-                backgroundColor: 'green', // background
+                background: 'black', // background
                 opacidad: 1,
                 borderColor: 'red', // color de borde
                 borderWidth: "0px" // ancho del borde
@@ -74,8 +78,7 @@
 
         //--------------------- Variables privadas aqui--------------------------
 
-        var margin = {top: 5, right: 0, bottom: 25, left: 40};
-        var width = 800 - margin.left - margin.right, height = 400 - margin.top - margin.bottom;
+        var margin, width, height;
 
         var colors;
         var parseDate;
@@ -126,7 +129,6 @@
 
                 //establece el dominio para el eje x (es decir, de donde a donde van los valores)
                 x.domain([minDate, maxDate]);
-
 
                 //Determiar el valor minimo para el eje y, de todos los datos
                 var min = d3.min(current_data, function (dataset) {
@@ -186,6 +188,8 @@
                         return 'g_line line_container_' + i;
                     });
 
+                lineas.transition();
+
                 //Dibuja el area debajo de la linea
                 if (self.default_options.showArea) {
 
@@ -218,13 +222,14 @@
 
                 //Dibuja la linea
                 lineas.append("path")
+                    .datum(function (d) {
+                        return d.data;
+                    })
                     .attr("clip-path", "url(#clip)")
                     .attr("class", function (d, i) {
                         return "line line_" + i;
                     })
-                    .attr('d', function (d, i) {
-                        return valueline(d.data);
-                    })
+                    .attr('d', valueline)
                     .attr("stroke", function (d, i) {
                         return colors(i);
                     })
@@ -295,6 +300,7 @@
                 //Rectangulo para mostrar las lineas discontinuas y capturar
                 //el mouse cuando se mueve
                 g_main.append("rect")
+                    .attr("class", "mouse-move")
                     .attr("width", width)
                     .attr("height", height)
                     .style("fill", "none")
@@ -345,30 +351,33 @@
                     dd = d0;
                 }
 
-                var current_circle = g_lines.select(".circle_" + posx);
+                if (self.default_options.showPoint) {
+                    var current_circle = g_lines.select(".circle_" + posx);
 
-                if (current_circle.attr('class').indexOf('activo') == -1) {
-                    /*Desactivo el que estaba y activo el nuevo*/
-                    var estaba = g_lines.select('circle.activo');
-                    estaba.classed('activo', false); //le quito la clase activo
-                    estaba.transition().attr('r', _getPointRadio(posData)); //le actualizo su radio
+                    if (current_circle.attr('class').indexOf('activo') == -1) {
+                        /*Desactivo el que estaba y activo el nuevo*/
+                        var estaba = g_lines.select('circle.activo');
+                        estaba.classed('activo', false); //le quito la clase activo
+                        estaba.transition().attr('r', _getPointRadio(posData)); //le actualizo su radio
 
-                    //Activo el nuevo y le pongo su nuevo radio
-                    current_circle.classed('activo', true);
-                    current_circle.transition().attr('r', 6);
-
-                    if (self.default_options.showToolTip) {
-                        var value = d3.format(",.2f")(dd.close);
-                        var result = current_info.select("div[data-titulo='" + dataset.titulo + "']");
-                        if (result.empty()) {
-                            current_info.append('div')
-                                .attr('data-titulo', dataset.titulo)
-                                .html('<b>' + dataset.titulo + ':</b> ' + value);
-                        } else {
-                            result.html('<b>' + dataset.titulo + ':</b> ' + value);
-                        }
-                    } // fin de show Tooltips
+                        //Activo el nuevo y le pongo su nuevo radio
+                        current_circle.classed('activo', true);
+                        current_circle.transition().attr('r', 6);
+                    }
                 }
+
+                if (self.default_options.showToolTip) {
+                    var value = d3.format(",.2f")(dd.close);
+                    var result = current_info.select("div[data-titulo='" + dataset.titulo + "']");
+                    if (result.empty()) {
+                        current_info.append('div')
+                            .attr('data-titulo', dataset.titulo)
+                            .html('<b>' + dataset.titulo + ':</b> ' + value);
+                    } else {
+                        result.html('<b>' + dataset.titulo + ':</b> ' + value);
+                    }
+                } // fin de show Tooltips
+
 
                 if (self.default_options.showLineIndicator) {
                     //Mover las lineas indicadoras
@@ -422,7 +431,7 @@
                 .style('width', '100%')
                 .append("svg")
                 .attr("id", "chart-svg")
-                //.style("background", "#F0F6FD")
+                .style("background", self.default_options.background)
                 //.style("background", "rgba(51, 204, 204, 0.20)")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom);
@@ -473,7 +482,7 @@
                 .append('div')
                 .attr('class', 'tooltip info hidden')
                 .style('left', '100%')
-                .style("background", self.default_options.tooltip.backgroundColor)
+                .style("background", self.default_options.tooltip.background)
                 .style("font-family", self.default_options.tooltip.fontFamily)
                 .style("font-size", self.default_options.tooltip.fontSize)
                 .style("opacity", self.default_options.tooltip.opacidad)
@@ -483,6 +492,10 @@
                 .attr('class', 'current_info');
 
             function Inicializar_Variables() {
+
+                margin = {top: 5, right: 8, bottom: 25, left: 40};
+                width = (+self.default_options.width) - margin.left - margin.right, height = (+self.default_options.height) - margin.top - margin.bottom;
+
 
                 // TODO Tener en cuenta que si el usuario pone titulo a la grafica entonces hay que dejar mas margin.top
 
@@ -607,29 +620,63 @@
         //Responsive chart
         _resize = function () {
             d3.select(window).on('resize', resize);
+            var w = parseInt(d3.select("#" + self.raiz).select('.chart-container').style("width")) - margin.left;
+            var ticksCalculator = d3.scale.linear().domain([0, w]).range([0, +self.default_options.ticks.x]);
             resize();
 
             function resize() {
-                var width = parseInt(d3.select("#" + self.raiz).select('svg').style("width")),
-                    height = parseInt(d3.select("#" + self.raiz).select('svg').style("height"));
 
-                console.info(width, height);
+                w = parseInt(d3.select("#" + self.raiz).select('.chart-container').style("width"));
 
-                //x.range([0, width]);
-                //y.range([height, 0]);
-                //
-                //yAxis.ticks(Math.max(height / 50, 2));
-                //xAxis.ticks(Math.max(width / 50, 2));
-                //
-                //svg.select('.x.axis')
-                //    .attr("transform", "translate(0," + height + ")")
-                //    .call(xAxis);
-                //
-                //svg.select('.y.axis')
-                //    .call(yAxis);
-                //
-                //svg.select('.line-main')
-                //    .attr("d", valueline);
+                var wr = (w - margin.left - margin.right);
+
+                //Actualizo el ancho del svg
+                svg.attr('width', w);
+                svg.select('defs').select('rect').attr('width', wr);
+
+                // Cambiar ancho del mouse-move
+                svg.select(".mouse-move")
+                    .attr("width", wr);
+
+                //Actualizo el rango de los datos
+                x.range([0, wr]);
+                y.range([height, 0]);
+
+                //Actializo la cantidad de ticks
+                xAxis.ticks(parseInt(ticksCalculator(wr)));
+
+                //Actualizo el eje X
+                svg.selectAll('.x.axis')
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(xAxis);
+
+                svg.selectAll('.line')
+                    .attr("d", valueline);
+
+                // Actualizo las grillas
+                if (self.default_options.showgridLines) {
+                    if (self.default_options.gridLines.vertical) {
+                        //Actualizar lineas tranparentes
+                        svg.select(".g_main").select("g.grid.x")
+                            .call(_grillas_eje_x()
+                                .tickSize(-height, 0, 0)
+                                .tickFormat("")
+                        );
+                    }
+
+                    if (self.default_options.gridLines.horizontal) {
+                        svg.select(".g_main").select("g.grid.y")
+                            .call(_grillas_eje_y()
+                                .tickSize(-wr, 0, 0)
+                                .tickFormat("")
+                        );
+                    }
+                }
+
+                //Actualizar area
+                svg.select('.g_main').selectAll('.area')
+                    .attr('d', area);
+
             }
         };
 

@@ -5,6 +5,16 @@ Basada en [d3js](https://github.com/mbostock/d3) y tiene como objetivo principal
 ## Opciones Generales
 
 ```javascript
+
+// Color de fondo de la grafica
+  background: "#BDC3CA",
+
+//Ancho de la grafica
+width: 550,
+
+// Altura de la grafica
+height: 300,
+
 //muestra el area sombreada bajo la linea
 showArea: true,
 

@@ -20,8 +20,8 @@
     var opciones = {
 
         //dateFormat: '%b - %d',
-        //ticks: {x: 5, y: 6, vertical: 3, horizontal: 6},
-        showPoint: true,
+//        ticks: {x: 5, y: 6, vertical: 3, horizontal: 6},
+//        showPoint: true,
     };
 
     var linea = new LineChart("chart", opciones);
@@ -42,8 +42,8 @@
 //            d.close = +d.close;
 //            d.volume = +d.volume;
 //        });
-        var desde = 20;
-        var cant = 50;
+        var desde = 50;
+        var cant = 100;
 
         uno = JSON.parse(uno);
         uno = uno.slice(desde, desde + cant);
@@ -61,7 +61,7 @@
                 data: uno,
                 mapValue: 'volume',
                 mapDate: 'date',
-                showArea: false
+                showArea: true
             }/*,
             {
                 titulo: "IPC",
@@ -71,7 +71,7 @@
                 showArea: false,
                 showPoint: true,
 
-            }, {
+            },{
                 titulo: "BBC",
                 data: y,
                 mapValue: 'low',
