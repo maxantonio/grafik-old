@@ -18,10 +18,8 @@
 
 
     var opciones = {
-
-        //dateFormat: '%b - %d',
-//        ticks: {x: 5, y: 6, vertical: 3, horizontal: 6},
-//        showPoint: true,
+        ticks: {x: 5, y: 6, vertical: 3, horizontal: 6},
+        showPoint: false,
     };
 
     var linea = new LineChart("chart", opciones);
@@ -43,7 +41,7 @@
 //            d.volume = +d.volume;
 //        });
         var desde = 50;
-        var cant = 100;
+        var cant = 30;
 
         uno = JSON.parse(uno);
         uno = uno.slice(desde, desde + cant);
@@ -59,7 +57,7 @@
             {
                 titulo: "IRStrat",
                 data: uno,
-                mapValue: 'volume',
+                mapValue: 'close',
                 mapDate: 'date',
                 showArea: true
             }/*,

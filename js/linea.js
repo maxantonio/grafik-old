@@ -9,7 +9,7 @@
         self.opciones = opciones;
         self.default_options = {
 
-            background: "#BDC3CA",
+            background: "#F0F6FD",
             width: 550,
             height: 300,
 
