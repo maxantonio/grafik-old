@@ -324,8 +324,8 @@
 
 
         _mousemove = function () {
-            var g_main = svg.select('.g_main');
-            var focus = g_main.select(".focus");
+            //var g_main = svg.select('.g_main');
+            //var focus = svg.select('.g_main').select(".focus");
             var g_lines = null;
 
             var x0 = x.invert(d3.mouse(this)[0]);
@@ -333,7 +333,8 @@
 
             var current_info = d3.select("#" + self.raiz).select(".current_info");
             self.datos.forEach(function (dataset, posData) {
-                g_lines = g_main.select('.line_container_' + posData);
+                g_lines = null;
+                g_lines = svg.select('.g_main').select('.line_container_' + posData);
                 var posx = 0;
                 var ii = bisectDate(dataset.data, x0, 1);
                 var d0 = dataset.data[ii - 1];
@@ -350,11 +351,10 @@
                 }
 
                 if (self.default_options.showPoint) {
-                    var current_circle = g_lines.select(".circle_" + posx);
-
+                    var current_circle = d3.select(".g_main " + '.line_container_' + posData + " .circle_" + posx);
                     if (current_circle.attr('class').indexOf('activo') == -1) {
                         /*Desactivo el que estaba y activo el nuevo*/
-                        var estaba = g_lines.select('circle.activo');
+                        var estaba = d3.select(".g_main " + '.line_container_' + posData +' circle.activo');
                         estaba.classed('activo', false); //le quito la clase activo
                         estaba.transition().attr('r', _getPointRadio(posData)); //le actualizo su radio
 
@@ -380,13 +380,13 @@
                 if (self.default_options.showLineIndicator) {
                     //Mover las lineas indicadoras
                     if (self.default_options.mouseLineIndicator.vertical) {
-                        focus.select(".x")
+                        svg.select('.g_main').select(".focus").select(".x")
                             .attr("transform", "translate(" + x(d.date) + ",0)")
                             .attr("y2", height);
                     }
 
                     if (self.default_options.mouseLineIndicator.horizontal) {
-                        focus.select(".y")
+                        svg.select('.g_main').select(".focus").select(".y")
                             .attr("transform", "translate(" + width * -1 + "," + y(d.close) + ")")
                             .attr("x2", width + width);
                     }
@@ -620,7 +620,6 @@
             d3.select(window).on('resize', resize);
             var w = parseInt(d3.select("#" + self.raiz).select('.chart-container').style("width")) - margin.left;
             var ticksCalculator = d3.scale.linear().domain([0, w]).range([0, +self.default_options.ticks.x]);
-            resize();
 
             function resize() {
 
@@ -663,7 +662,7 @@
                 // Actualizo las grillas
                 if (self.default_options.showgridLines) {
                     if (self.default_options.gridLines.vertical) {
-                        //Actualizar lineas tranparentes
+                        // Actualizar lineas tranparentes
                         d3.select("g.grid.x")
                             .call(_grillas_eje_x()
                                 .tickSize(-height, 0, 0)
