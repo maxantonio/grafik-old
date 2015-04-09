@@ -655,7 +655,7 @@
                 svg.select(".g_main").selectAll('.area')
                     .attr('d', area);
 
-                d3.selectAll('.mark')
+                svg.select(".g_main").selectAll('.mark')
                     .attr('cx', function (d) {
                         return x(d.date);
                     });
@@ -664,17 +664,9 @@
                 if (self.default_options.showgridLines) {
                     if (self.default_options.gridLines.vertical) {
                         //Actualizar lineas tranparentes
-                        d3.select("#" + self.raiz).select(".g_main").select("g.grid.x")
+                        d3.select("g.grid.x")
                             .call(_grillas_eje_x()
                                 .tickSize(-height, 0, 0)
-                                .tickFormat("")
-                        );
-                    }
-
-                    if (self.default_options.gridLines.horizontal) {
-                        svg.select(".g_main").select("g.grid.y")
-                            .call(_grillas_eje_y()
-                                .tickSize(-wr, 0, 0)
                                 .tickFormat("")
                         );
                     }

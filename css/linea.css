@@ -6,6 +6,10 @@ body {
     display: none;
 }
 
+.chart-container{
+    min-width: 200px;
+}
+
 /*------------------------------------------------------- Css para la linea ----------------------------- */
 path {
     /*stroke: rgba(51, 204, 204, 0.56);*/
