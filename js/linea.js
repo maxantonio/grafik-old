@@ -160,7 +160,7 @@
 
                 y.domain([min - add, max + add]);
 
-                g_main = svg.select('.g_main');
+                var g_main = svg.select('.g_main');
 
                 if (self.default_options.showgridLines) {
                     if (self.default_options.gridLines.vertical) {
@@ -188,9 +188,7 @@
                         return 'g_line line_container_' + i;
                     });
 
-                lineas.transition();
-
-                //Dibuja el area debajo de la linea
+                // Dibuja el area debajo de la linea
                 if (self.default_options.showArea) {
 
                     //Dibuja el area debajo de la grafica
@@ -442,11 +440,11 @@
                 .attr("width", width)
                 .attr("height", height);
 
-            g_main = svg.append("g")
+            var g_main = svg.append("g")
                 .attr('class', 'g_main')
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            focus = g_main.append("g")
+            var focus = g_main.append("g")
                 .attr("class", "focus")
                 .style("display", "none");
 
@@ -653,11 +651,20 @@
                 svg.selectAll('.line')
                     .attr("d", valueline);
 
+                //Actualizar area
+                svg.select(".g_main").selectAll('.area')
+                    .attr('d', area);
+
+                d3.selectAll('.mark')
+                    .attr('cx', function (d) {
+                        return x(d.date);
+                    });
+
                 // Actualizo las grillas
                 if (self.default_options.showgridLines) {
                     if (self.default_options.gridLines.vertical) {
                         //Actualizar lineas tranparentes
-                        svg.select(".g_main").select("g.grid.x")
+                        d3.select("#" + self.raiz).select(".g_main").select("g.grid.x")
                             .call(_grillas_eje_x()
                                 .tickSize(-height, 0, 0)
                                 .tickFormat("")
@@ -672,10 +679,6 @@
                         );
                     }
                 }
-
-                //Actualizar area
-                svg.select('.g_main').selectAll('.area')
-                    .attr('d', area);
 
             }
         };

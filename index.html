@@ -18,8 +18,10 @@
 
 
     var opciones = {
-        ticks: {x: 5, y: 6, vertical: 3, horizontal: 6},
-        showPoint: false,
+        ticks: {x: 3, y: 6, vertical: 3, horizontal: 6},
+        showPoint: true,
+        width: 700,
+        height: 350,
     };
 
     var linea = new LineChart("chart", opciones);
@@ -41,7 +43,7 @@
 //            d.volume = +d.volume;
 //        });
         var desde = 50;
-        var cant = 30;
+        var cant = 3;
 
         uno = JSON.parse(uno);
         uno = uno.slice(desde, desde + cant);
@@ -60,23 +62,25 @@
                 mapValue: 'close',
                 mapDate: 'date',
                 showArea: true
+
+                //area: {color: 'red', opacity:.5},
             }/*,
-            {
-                titulo: "IPC",
-                data: x,
-                mapValue: 'hight',
-                mapDate: 'date',
-                showArea: false,
-                showPoint: true,
+             {
+             titulo: "IPC",
+             data: x,
+             mapValue: 'hight',
+             mapDate: 'date',
+             showArea: false,
+             showPoint: true,
 
-            },{
-                titulo: "BBC",
-                data: y,
-                mapValue: 'low',
-                mapDate: 'date',
-                showArea:true
+             },{
+             titulo: "BBC",
+             data: y,
+             mapValue: 'low',
+             mapDate: 'date',
+             showArea:true
 
-            }*/
+             }*/
         ];
 
         linea.datos = datos;
